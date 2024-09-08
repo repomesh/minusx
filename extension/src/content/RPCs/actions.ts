@@ -126,7 +126,7 @@ export const uSelectAllText = async (shouldDelete = false) => {
     }
 }
 
-export const uSetValueSlow = async (selector: QuerySelector, value: string = '', index: number = 0) => {
+export const typeText = async (selector: QuerySelector, value: string = '', index: number = 0) => {
   const user = userEvent.setup({
     pointerEventsCheck: PointerEventsCheckLevel.EachTrigger
   })
@@ -137,24 +137,11 @@ export const uSetValueSlow = async (selector: QuerySelector, value: string = '',
   }
 }
 
-export const uSetValueInstant = async (selector: QuerySelector, value: string = '', index: number = 0) => {
+export const dragAndDropText = async (selector: QuerySelector, value: string = '', index: number = 0) => {
   const element = getElementFromQuerySelector(selector, index);
   if (element) {
     console.log('Setting value instantly', element, selector, value, index)
     await dropText(value, element)
-  }
-}
-
-export const uSetValue = async (selector: QuerySelector, value: string = '', index: number = 0, type = 'slow') => {
-  if (type === 'slow') {
-    uSetValueSlow(selector, value, index)
-  }
-  else {
-    // #HACK temporary hack to fix backward compatibility
-    await uSetValueSlow(selector, '{ArrowLeft}', index)
-    await uSelectAllText(true)
-    await uSetValueInstant(selector, value, index)
-    return await uSetValueSlow(selector, '{ArrowLeft}', index)
   }
 }
 
@@ -169,7 +156,3 @@ export const uHighlight = async (selector: QuerySelector, index: number = 0, new
     highlightElement(element as HTMLElement, newStyles)
   }
 }
-
-// New RPCs
-export const dragAndDropText = uSetValueInstant
-export const typeText = uSetValueSlow
