@@ -2,6 +2,7 @@ import userEvent, { PointerEventsCheckLevel } from '@testing-library/user-event'
 import { fireEvent } from '@testing-library/dom';
 import { QuerySelector } from '../../helpers/pageParse/querySelectorTypes';
 import { getElementFromQuerySelector, getElementsFromQuerySelector } from '../../helpers/pageParse/getElements';
+import { sleep } from '../../helpers/utils';
 
 // #HACK to implement highlight
 type Style = Partial<HTMLEmbedElement["style"]>
@@ -89,7 +90,7 @@ const scrollElementIntoView = async (element: Element) => {
   }
 };
 
-const dropText = async (textToDrop: string, element: Element) => {
+export const dropText = async (textToDrop: string, element: Element) => {
   const dataTransfer = new DataTransfer();
   dataTransfer.clearData()
   dataTransfer.setData('text/plain', textToDrop);
@@ -118,6 +119,7 @@ export const uDblClick = async (selector: QuerySelector, index: number = 0) => {
     return await user.dblClick(element)
   }
 }
+
 
 export const uSelectAllText = async (shouldDelete = false) => {
     await document.execCommand('selectall', null, false)

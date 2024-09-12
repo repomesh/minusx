@@ -41,10 +41,12 @@ var options = {
     background: path.join(__dirname, 'src', 'background', 'index.ts'),
     popup: path.join(__dirname, 'src', 'popup', 'index.tsx'),
     contentScript: path.join(__dirname, 'src', 'content', 'index.ts'),
+    debug: path.join(__dirname, 'src', 'content', 'debug.ts'),
     // @ppsreejith: We can generate this in the future, for now adding manually
     // Same in manifest.json file
     metabase: path.join(__dirname, '..', 'apps', 'src', 'metabase', 'inject.ts'),
     jupyter: path.join(__dirname, '..', 'apps', 'src', 'jupyter', 'inject.ts'),
+    posthog: path.join(__dirname, '..', 'apps', 'src', 'posthog', 'inject.ts'),
   },
   chromeExtensionBoilerplate: {
     notHotReload: ['background', 'contentScript'],

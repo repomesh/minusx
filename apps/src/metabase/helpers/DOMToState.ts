@@ -6,12 +6,6 @@ import { DashboardInfo } from './dashboard/types';
 import { getDashboardAppState } from './dashboard/appState';
 
 const { getMetabaseState, queryURL } = RPCs;
-interface ExtractedTable {
-  name: string;
-  description?: string;
-  schema?: string;
-  id: number;
-}
 
 interface ExtractedDataBase {
   name: string;
@@ -24,6 +18,14 @@ interface ExtractedDataBase {
     semantic_version: number[];
   }
 }
+
+interface ExtractedTable {
+  name: string;
+  description?: string;
+  schema?: string;
+  id: number;
+}
+
 
 export interface MetabaseAppStateSQLEditor {
   databaseInfo?: ExtractedDataBase;
