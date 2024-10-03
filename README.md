@@ -58,6 +58,6 @@ MinusX adds a side-chat to your app, and when given an instruction, it operates 
 
 ## Developing MinusX Locally
 
-MinusX is build to be extended. Check out the [setup guide](https://github.com/minusxai/minusx/blob/main/setup.md) and read more about [contributing](https://github.com/minusxai/minusx/blob/main/CONTRIBUTING.md)!
+MinusX is built to be extended. Check out the [setup guide](https://github.com/minusxai/minusx/blob/main/setup.md) and read more about [contributing](https://github.com/minusxai/minusx/blob/main/CONTRIBUTING.md)!
 
 We welcome both PRs and GH issues.
