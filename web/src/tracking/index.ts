@@ -19,7 +19,7 @@ export const GLOBAL_EVENTS = {
 
 export const captureEvent = (type: string, payload?: object) => {
     capturePosthogEvent(type, payload)
-    captureCustomEvent(type, payload)
+    // captureCustomEvent(type, payload)
 }
 
 export const identifyUser = (unique_id: string, kv?: Record<string, string>) => {
