@@ -35,6 +35,7 @@ import { JupyterNotebookState } from '../../../../apps/src/jupyter/helpers/DOMTo
 import { querySelectorMap as jupyterQSMap } from '../../../../apps/src/jupyter/helpers/querySelectorMap'
 import { getElementScreenCapture } from '../../app/rpc'
 import { metaPlanner } from '../../planner/metaPlan'
+import { getParsedIframeInfo } from '../../helpers/origin'
 
 interface ChatSuggestionsProps {
   suggestQueries: boolean;
@@ -44,6 +45,12 @@ interface ChatSuggestionsProps {
 }
 
 const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({ suggestQueries, toggleSuggestions, suggestions, onSuggestionClick }) => {
+  const tool = getParsedIframeInfo().tool
+  const toolVersion = getParsedIframeInfo().toolVersion
+  const isSuggestionsDisabled = tool === "google" && toolVersion === "sheets"
+  if (isSuggestionsDisabled) {
+    return null
+  }
   return (
     <Flex wrap="wrap" gap={2}>
       <HStack justifyContent={"space-between"} width={"100%"}>
