@@ -14,7 +14,7 @@ import {
   extractTableInfo,
   getSelectedDbId,
 } from "./helpers/getDatabaseSchema";
-import { get, map, truncate } from "lodash";
+import { get, map, set, truncate } from "lodash";
 import {
   DashboardMetabaseState,
   DashcardDetails,
@@ -24,9 +24,20 @@ import {
   VisualizationType,
   primaryVisualizationTypes,
   Card,
-  toLowerVisualizationType
+  toLowerVisualizationType,
+  ParameterValues
  } from "./helpers/types";
 
+ // not using this right now, but might be useful later?
+const getVariablesInQuery = (query: string): string[] => {
+  const variablesInQuery: string[] = [];
+  const regex = /{{(\w+)}}/g;
+  let match;
+  while ((match = regex.exec(query)) !== null) {
+    variablesInQuery.push(match[1]);
+  }
+  return variablesInQuery;
+}
 
 export class MetabaseController extends AppController<MetabaseAppState> {
   // 0. Exposed actions --------------------------------------------
@@ -34,34 +45,115 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     labelRunning: "Updating SQL query",
     labelDone: "Updated query",
     description: "Updates the SQL query in the Metabase SQL editor and executes it.",
-    renderBody: ({ sql}: { sql: string }) => {
+    renderBody: ({ sql }: { sql: string }) => {
       return {text: null, code: sql}
     }
   })
-  async updateSQLQueryAndExecute({ sql }: { sql: string }) {
+  async updateSQLQuery({ sql, executeImmediately = true }: { sql: string, executeImmediately?: boolean }) {
     const actionContent: BlankMessageContent = {
       type: "BLANK",
     };
+    const userApproved = await RPCs.getUserConfirmation({content: sql, contentTitle: "Update SQL query?"});
+    if (!userApproved) {
+      throw new Error("Action (and subsequent plan) cancelled!");
+    }
     const state = (await this.app.getState()) as MetabaseAppStateSQLEditor;
     if (state.sqlEditorState == "closed") {
       await this.toggleSQLEditor("open");
     }
+    const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+    // const currentVariables = getVariablesInQuery(currentCard.dataset_query.native.query);
+    // const variablesInQuery = getVariablesInQuery(sql);
     await this.uDblClick({ query: "sql_query" });
-    const userApproved = await RPCs.getUserConfirmation({content: sql});
+    await this.setValue({ query: "sql_query", value: sql });
+
+    
+    if (executeImmediately) {
+      return await this._executeSQLQueryInternal();
+    } else {
+      actionContent.content = "OK";
+      return actionContent;
+    }
+  }
+
+  @Action({
+    labelRunning: "Executing SQL Query",
+    labelDone: "Executed SQL query",
+    description: "Executes the SQL query in the Metabase SQL editor.",
+    renderBody: () => {
+      return {text: null, code: null}
+    }
+  })
+  async executeSQLQuery() {
+    const userApproved = await RPCs.getUserConfirmation({content: "Execute query", contentTitle: "Accept below action?"});
     if (!userApproved) {
       throw new Error("Action (and subsequent plan) cancelled!");
     }
+    return await this._executeSQLQueryInternal();
+  }
 
-    await this.setValue({ query: "sql_query", value: sql });
-    await this.uClick({ query: "run_query" });
-    await waitForQueryExecution();
-    const sqlErrorMessage = await getSqlErrorMessage();
-    if (sqlErrorMessage) {
-      actionContent.content = sqlErrorMessage;
+  @Action({
+    labelRunning: "Updating SQL Variable",
+    labelDone: "Updated SQL Variable",
+    description: "Updates value or metadata of a variable in the SQL editor.",
+    renderBody: ({ variable, value, type, displayName }: { variable: string, value: string, type: string, displayName: string}) => {
+      return {text: `variable: ${variable}`, code: JSON.stringify({value, type, displayName})}
+    }
+  })
+  async setSqlVariable({ variable, value, type, displayName }: { variable: string, value: string, type: string, displayName: string }) {
+    const actionContent: BlankMessageContent = {
+      type: "BLANK",
+    };
+    const setContentAndWarn = (content: string) => {
+      actionContent.content = content;
+      console.warn(content);
+    }
+    const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+    if (currentCard) {
+      let parameters = _.get(currentCard, 'dataset_query.native.template-tags', {} as any);
+      if (parameters[variable] == undefined) {
+        setContentAndWarn(`Could not update variable value: Variable "${variable}" not found`);
+        return actionContent;
+      } else {
+        let parameterId = parameters[variable].id;
+        if (parameterId == undefined) {
+          setContentAndWarn(`Could not update variable value: Variable "${variable}" not found`);
+          return actionContent;
+        } else {
+          // check if type and displayName are present and use the qb.card UPDATE_QUESTION action to update them
+          let variableInfo = currentCard.dataset_query.native['template-tags'][variable];
+          variableInfo['type'] = type ?? variableInfo['type'];
+          variableInfo['display-name'] = displayName ?? variableInfo['display-name'];
+          currentCard.dataset_query.native['template-tags'][variable] = variableInfo;
+          const typeToOtherTypeMap = {
+            'text': 'category',
+            'number': 'number/=',
+            'date': 'date/single',
+            '': ''
+          } as Record<string, string>;
+          let otherType = typeToOtherTypeMap[variableInfo['type']];
+          // find the parameter in currentCard.parameters and modify its type to otherType
+          console.log("currentCard.parameters", currentCard.parameters);
+          for (let i = 0; i < currentCard.parameters.length; i++) {
+            const parameter = currentCard.parameters[i];
+            if (parameter.slug == variable) {
+              parameter.type = otherType ?? parameter.type;
+              parameter.name = displayName ?? parameter.name;
+              break;
+            }
+          }
+
+          await RPCs.dispatchMetabaseAction('metabase/qb/UPDATE_QUESTION', { card: currentCard });
+          // check if value is present. if yes, then update.
+          if (value != undefined) {
+            await RPCs.dispatchMetabaseAction('metabase/qb/SET_PARAMETER_VALUE', { id: parameterId, value });
+          }
+          await RPCs.dispatchMetabaseAction('metabase/qb/SET_TEMPLATE_TAG')
+        }
+      }
     } else {
-      // table output
-      const tableOutput = await getAndFormatOutputTable();
-      actionContent.content = tableOutput;
+      setContentAndWarn("Could not update variable value: No current card found");
+      return actionContent;
     }
     return actionContent;
   }
@@ -346,6 +438,22 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       await this.uDblClick({ query: "contract_editor" });
     }
     return;
+  }
+  async _executeSQLQueryInternal() {
+    const actionContent: BlankMessageContent = {
+      type: "BLANK",
+    };
+    await this.uClick({ query: "run_query" });
+    await waitForQueryExecution();
+    const sqlErrorMessage = await getSqlErrorMessage();
+    if (sqlErrorMessage) {
+      actionContent.content = sqlErrorMessage;
+    } else {
+      // table output
+      const tableOutput = await getAndFormatOutputTable();
+      actionContent.content = tableOutput;
+    }
+    return actionContent;
   }
 
   // 2. Deprecated or unused actions -------------------------------
