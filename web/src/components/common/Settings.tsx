@@ -82,7 +82,8 @@ const SettingsPage = () => {
         }
         dispatch(setBillingInfo({
           credits: billingInfo.credits,
-          isSubscribed: billingInfo.subscribed
+          isSubscribed: billingInfo.subscribed,
+          stripeCustomerId: billingInfo.stripe_customer_id
         }))
       })
     }, 2000)
@@ -130,7 +131,7 @@ const SettingsPage = () => {
             </Tag> */}
           </Stack>
           {!billing.isSubscribed && <SubscribeButton />}
-          {billing.isSubscribed && <PortalButton />}
+          {billing.stripeCustomerId && <PortalButton />}
           <PricingPlans />
           <Text>
             If you encounter any issues, contact us at support@minusx.ai or live support

@@ -5,6 +5,7 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 interface BillingState {
   isSubscribed: boolean
   credits: number
+  stripeCustomerId?: string
 }
 
 const initialState: BillingState = {
@@ -23,6 +24,7 @@ export const billingSlice = createSlice({
     ) => {
       state.credits = action.payload.credits
       state.isSubscribed = action.payload.isSubscribed
+      state.stripeCustomerId = action.payload.stripeCustomerId
     },
     updateCredits: (
       state,
