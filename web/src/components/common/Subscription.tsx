@@ -32,6 +32,6 @@ export const PortalButton = () => {
 }
 
 export const PricingPlans = () => {
-  return <Link width={"100%"} textAlign={"center"} href="https://minusx.ai/#pricing"
+  return <Link width={"100%"} textAlign={"center"} href="https://minusx.ai/pricing/"
   color="blue" isExternal>Explore pricing plans, features</Link>
 }
