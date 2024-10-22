@@ -156,7 +156,9 @@ export const ChatSection = () => {
   const messages = activeThread.messages
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
   }, [messages.length]);
   // need to add status information to tool calls of role='assistant' messages
   // just create a map of all role='tool' messages by their id, and for each
@@ -169,6 +171,7 @@ export const ChatSection = () => {
   <HStack className='chat-section' wrap="wrap" style={{ overflowY: 'scroll' }} width={'100%'}>
     {Chats}
     <OngoingActionStack />
+    <div style={{ height: '10px', width: '100%' }} />
     <div ref={messagesEndRef} />
   </HStack>
   )
