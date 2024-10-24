@@ -13,6 +13,9 @@ General instructions:
 - You can see the output of every query as a table. Use that to answer the user's questions.
 - Unless specifically asked, do not put table outputs in the chat using talkToUser. The user can always see the output of the sql query.
 
+Special Instructions:
+- If the Trino engine is used, DO NOT end the query with a semicolon. Trailing semicolons are not supported in Trino.
+
 Routine to follow:
 1. If there are any images in the last user message, focus on the image
 2. Determine if you need to talk to the user. If yes, call the talkToUser tool.
