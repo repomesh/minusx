@@ -71,7 +71,7 @@
   width: 850px;
 }
 
-.closed {
+#minusx-root.closed {
   width: 0
 }
 
@@ -90,7 +90,8 @@
   width: 40px;
 }
 
-.invisible {
+/* not really using invisible any more but keeping it here for now */
+#minusx-root.invisible {
   display: none;
 }
 
