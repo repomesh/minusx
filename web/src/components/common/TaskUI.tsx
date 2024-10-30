@@ -107,7 +107,6 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const userConfirmation = activeThread.userConfirmation
   const dispatch = useDispatch()
   const taskInProgress = !(activeThread.status == 'FINISHED')
-  const[showMessagesTooLong, setShowMessagesTooLong] = useState(messages?.length > 100)
 
   const debouncedSetInstruction = useCallback(
     _.debounce((instructions) => dispatch(setTaskInstructions(instructions)), 500),
@@ -124,6 +123,10 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
 
   const toggleSuggestions = (value: boolean) => {
     dispatch(setSuggestQueries(value))
+  }
+
+  const isMessageTooLong = () => {
+    return JSON.stringify(messages).length / 4 > 10000
   }
 
 
@@ -208,26 +211,29 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         <ChatSection />
       </VStack>
       <VStack alignItems={"stretch"}>
-        <Divider borderColor={"minusxBW.500"}/>
         { !taskInProgress && !userConfirmation.show && !(currentTool === "google" && currentToolVersion === "sheets") &&
         <>
-        <ChatSuggestions
-          suggestQueries={suggestQueries}
-          toggleSuggestions={toggleSuggestions}
-          suggestions={suggestions} 
-          onSuggestionClick={(suggestion) => {
-            chat.addUserMessage({
-              content: {
-                type: "DEFAULT",
-                text: suggestion,
-                images: []
-              },
-            })
-          }} 
-        />
+        <Divider borderColor={"minusxBW.500"}/>
+        {isMessageTooLong() ? 
+          <Text fontSize="sm" color={"minusxBW.600"}>Long conversations decrease speed and impact accuracy. Consider <HiOutlineRefresh style={{display:"inline-block", verticalAlign: "middle"}}/> this thread.</Text> : 
+          <ChatSuggestions
+            suggestQueries={suggestQueries}
+            toggleSuggestions={toggleSuggestions}
+            suggestions={suggestions} 
+            onSuggestionClick={(suggestion) => {
+              chat.addUserMessage({
+                content: {
+                  type: "DEFAULT",
+                  text: suggestion,
+                  images: []
+                },
+              })
+            }} 
+          />
+        }
         <Divider borderColor={"minusxBW.500"}/>
         </>
-         }
+        }
         <Thumbnails thumbnails={thumbnails} />
         <UserConfirmation/>
         {
@@ -274,7 +280,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
               }
             }} colorScheme="minusxGreen" size="sm" disabled={taskInProgress}>I'm feeling lucky</Button>)
           }
-        {demoMode && <Button onClick={async () => {
+        {/* {demoMode && <Button onClick={async () => {
               // let text = await gdocReadSelected()
               const appState = await getApp().getState() as JupyterNotebookState
               const outputCellSelector =  await jupyterQSMap.cell_output;
@@ -290,7 +296,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
             setInstructions('')
           }
         }} colorScheme="minusxGreen" size="sm" disabled={taskInProgress}>feelin' lucky</Button>
-        }
+        } */}
         <HStack>
           <Textarea
             ref={ref}
@@ -309,10 +315,6 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
               ) : <RunTaskButton runTask={runTask} disabled={taskInProgress} />
             }
             {
-              showMessagesTooLong ?
-              <Tooltip hasArrow label={tooLongTooltip} placement='auto' borderRadius={5} defaultIsOpen onClose={() => setShowMessagesTooLong(false)} isDisabled={!showMessagesTooLong}>
-                {resetMessageHistoryButton}
-              </Tooltip> : 
               <Tooltip hasArrow label="Clear Chat" placement='left' borderRadius={5} openDelay={500}>
                 {resetMessageHistoryButton}
               </Tooltip>
