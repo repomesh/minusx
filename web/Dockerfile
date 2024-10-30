@@ -45,6 +45,8 @@ RUN yarn install
 
 WORKDIR /app/web
 
+RUN yarn install
+
 ENV PATH="/app/node_modules/.bin:$PATH"
 
 # CMD ["sh", "-c", "sleep 300"]
