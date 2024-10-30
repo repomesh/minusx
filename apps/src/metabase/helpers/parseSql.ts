@@ -1,7 +1,8 @@
 import { Parser } from 'node-sql-parser';
+import { uniqBy } from 'lodash';
 
 export interface TableAndSchema {
-  table: string;
+  name: string;
   schema: string;
 }
 
@@ -15,7 +16,7 @@ export interface TableAndSchema {
     return tableList.map((table: string) => {
       const [type, schema, tableName] = table.split('::');
       return {
-        table: tableName,
+        name: tableName,
         schema: schema
       };
     });
@@ -25,6 +26,7 @@ export interface TableAndSchema {
   }
 }
 
+// TODO(@arpit): currently don't support some bigquery syntax like "select * from `schema.table`" or "select * from `db.schema.table`" 
 export function getTablesFromSqlRegex(sql: string): TableAndSchema[] {
   // regex match to find all tables
   // tables come after FROM/JOIN/INTO (case insensitive)
@@ -32,9 +34,12 @@ export function getTablesFromSqlRegex(sql: string): TableAndSchema[] {
   // need to capture both schema (if exists) and table
   // have 2 patterns: one is for schema.table and one for "schema with spaces"."table with spaces"
   const regex = /(?:FROM|JOIN|INTO)\s+(?:((?:[\w\p{L}]+)|(?:"(?:[\w\s\-\p{L}]+))")\.)?((?:[\w\p{L}]+)|(?:"(?:[\w\s\-\p{L}]+))")\s*/ugi;
-  const matches = sql.matchAll(regex);
+  const matches = Array.from(sql.matchAll(regex));
   const tables: TableAndSchema[] = [];
-  
+  // log if 0 matches when sql is not empty
+  if (matches.length === 0 && sql !== '') { 
+    console.warn('[minusx] No matches found in sql:', sql);
+  }
   for (const match of matches) {
     let [, schema, table] = match;
     // remove surrounding quotes if present
@@ -46,12 +51,12 @@ export function getTablesFromSqlRegex(sql: string): TableAndSchema[] {
     }
     if (schema) {
       tables.push({
-        table: table,
+        name: table,
         schema: schema
       });
     } else {
       tables.push({
-        table: table,
+        name: table,
         schema: ''
       });
     }
