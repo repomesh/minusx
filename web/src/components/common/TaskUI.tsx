@@ -2,13 +2,15 @@ import {
   HStack,
   Textarea,
   VStack,
+  Stack,
   Icon,
   IconButton,
   Divider,
   Tooltip,
   Text,
   Switch,
-  Spinner
+  Spinner,
+  Button
 } from '@chakra-ui/react'
 import React, { forwardRef, useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -16,14 +18,13 @@ import RunTaskButton from './RunTaskButton'
 import AbortTaskButton from './AbortTaskButton'
 import { ChatSection } from './Chat'
 import { HiOutlineRefresh } from 'react-icons/hi'
-import { HiMiniSparkles } from "react-icons/hi2";
+import { BiScreenshot, BiPaperclip } from 'react-icons/bi'
 import chat from '../../chat/chat'
 import _ from 'lodash'
 import { abortPlan, startNewThread } from '../../state/chat/reducer'
 import { resetThumbnails, setInstructions as setTaskInstructions } from '../../state/thumbnails/reducer'
 import { setSuggestQueries } from '../../state/settings/reducer'
 import { RootState } from '../../state/store'
-import {  Button, Flex } from '@chakra-ui/react';
 import { getSuggestions } from '../../helpers/LLM/remote'
 import { Thumbnails } from './Thumbnails'
 import { UserConfirmation } from './UserConfirmation'
@@ -36,61 +37,17 @@ import { querySelectorMap as jupyterQSMap } from '../../../../apps/src/jupyter/h
 import { getElementScreenCapture } from '../../app/rpc'
 import { metaPlanner } from '../../planner/metaPlan'
 import { getParsedIframeInfo } from '../../helpers/origin'
+import AutosizeTextarea from './AutosizeTextarea'
+import { setMinusxMode } from '../../app/rpc'
+import { updateAppMode, updateSidePanelTabName } from '../../state/settings/reducer'
+import { UIElementSelection } from './UIElements'
+import { capture } from '../../helpers/screenCapture/extensionCapture'
+import { addThumbnail } from '../../state/thumbnails/reducer'
+import { Coordinates, startSelection } from '../../helpers/Selection'
+import { ImageContext } from '../../state/chat/types'
+import { QuickActionButton } from './QuickActionButton'
+import { ChatSuggestions } from './ChatSuggestions'
 
-interface ChatSuggestionsProps {
-  suggestQueries: boolean;
-  toggleSuggestions: (value: boolean) => void;
-  suggestions: string[];
-  onSuggestionClick: (suggestion: string) => void;
-}
-
-const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({ suggestQueries, toggleSuggestions, suggestions, onSuggestionClick }) => {
-  return (
-    <Flex wrap="wrap" gap={2}>
-      <HStack justifyContent={"space-between"} width={"100%"}>
-        <HStack color="minusxGreen.500">
-          <HiMiniSparkles/>
-          <Text fontSize="sm" fontWeight={"bold"}>Suggestions</Text>
-        </HStack>
-        <HStack marginTop={0}>
-          <Switch color={"minusxBW.800"} colorScheme='minusxGreen' size={"sm"} isChecked={suggestQueries} onChange={(e) => toggleSuggestions(e.target.checked)} />
-        </HStack>
-      </HStack>
-
-      {suggestQueries && suggestions.length === 0 && (
-        <HStack justifyContent={"center"} width={"100%"}><Spinner size="xs" color="minusxGreen.500" /></HStack>
-      )}
-
-      {suggestQueries && suggestions.map((suggestion, index) => (
-        <Button
-          key={index}
-          onClick={() => onSuggestionClick(suggestion)}
-          size="sm"
-          colorScheme="blue"
-          variant="outline"
-          borderRadius="5px"
-          textAlign={"left"}
-          p={2}
-          style={{
-            whiteSpace: "normal",
-            wordWrap: "break-word",
-            height: "auto"
-          }}
-        >
-          {suggestion}
-        </Button>
-      ))}
-    </Flex>
-  );
-};
-
-const tooLongTooltip = (
-  <span>
-    Your message history is too long. 
-    <br/>
-     Try resetting.
-  </span>
-)
 
 const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const currentTool = useSelector((state: RootState) => state.settings.iframeInfo.tool)
@@ -107,6 +64,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const userConfirmation = activeThread.userConfirmation
   const dispatch = useDispatch()
   const taskInProgress = !(activeThread.status == 'FINISHED')
+  const isDevToolsOpen = useSelector((state: RootState) => state.settings.isDevToolsOpen)
 
   const debouncedSetInstruction = useCallback(
     _.debounce((instructions) => dispatch(setTaskInstructions(instructions)), 500),
@@ -128,6 +86,42 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const isMessageTooLong = () => {
     return JSON.stringify(messages).length / 4 > 10000
   }
+
+  const handleSnapClick = async () => {
+    await setMinusxMode('open-selection')
+    dispatch(updateAppMode('selection'))
+    const uiSelection = new UIElementSelection()
+    startSelection(async (coords) => {
+      const nodes = coords ? uiSelection.getSelectedNodes() : []
+      uiSelection.end()
+      console.log('Coords are', coords)
+      // if (nodes.length >= 0 && coords) {
+      if (coords) {
+        console.log('Nodes are', nodes, coords)
+        try {
+          const {url, width, height} = await capture(coords)
+          console.log('URL, width, height', url, width, height)
+          const context : ImageContext = {
+            text: ""
+          }
+          dispatch(addThumbnail({
+            url,
+            type: "BASE64",
+            width,
+            height,
+            context,
+          }))
+        } catch (err) {
+          console.log('Error while capturing', err)
+        }
+      }
+      dispatch(updateAppMode('sidePanel'))
+      await setMinusxMode(isDevToolsOpen ? 'open-sidepanel-devtools' : 'open-sidepanel')
+    }, (coords) => {
+      uiSelection.select(coords)
+    })
+  }
+
 
 
   const runTask = async () => {
@@ -174,16 +168,6 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
       runTask()
     }
   }
-  let resetMessageHistoryButton = (<IconButton
-    isRound={true}
-    onClick={clearMessages}
-    variant="solid"
-    colorScheme="minusxGreen"
-    aria-label="Refresh"
-    size={'sm'}
-    icon={<Icon as={HiOutlineRefresh} boxSize={5} />}
-    disabled={messages.length === 0 || taskInProgress}
-    />)
 
   return (
     <VStack
@@ -297,30 +281,35 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
           }
         }} colorScheme="minusxGreen" size="sm" disabled={taskInProgress}>feelin' lucky</Button>
         } */}
-        <HStack>
-          <Textarea
+        <Stack position={"relative"}>
+          <AutosizeTextarea
             ref={ref}
             autoFocus
             aria-label='Enter Instructions'
             value={instructions}
-            disabled={taskInProgress}
+            isDisabled={taskInProgress}
             onChange={(e) => setInstructions(e.target.value)}
             onKeyDown={onKeyDown}
-            style={{ width: '98%', height: "100%" }}
+            style={{ width: '100%', height: "100%" }}
           />
-          <VStack>
-            {
-              taskInProgress ? (
-                <AbortTaskButton abortTask={() => dispatch(abortPlan())} disabled={!taskInProgress}/>
-              ) : <RunTaskButton runTask={runTask} disabled={taskInProgress} />
-            }
-            {
-              <Tooltip hasArrow label="Clear Chat" placement='left' borderRadius={5} openDelay={500}>
-                {resetMessageHistoryButton}
-              </Tooltip>
-            }
-          </VStack>
-        </HStack>
+          <HStack position={"absolute"} bottom={0} width={"100%"} p={2}>
+            <HStack justify={"space-between"}  width={"100%"}>
+              <HStack gap={0}>
+                <QuickActionButton tooltip="Add Context (Coming Soon!)" onclickFn={handleSnapClick} icon={BiPaperclip} isDisabled={true}/>
+                <QuickActionButton tooltip="Select & Ask" onclickFn={handleSnapClick} icon={BiScreenshot} isDisabled={taskInProgress}/>
+                <QuickActionButton tooltip="Clear Chat" onclickFn={clearMessages} icon={HiOutlineRefresh} isDisabled={messages.length === 0 || taskInProgress}/>
+              </HStack>
+              <HStack>
+                {
+                  taskInProgress ? (
+                    <AbortTaskButton abortTask={() => dispatch(abortPlan())} disabled={!taskInProgress}/>
+                  ) : <RunTaskButton runTask={runTask} disabled={taskInProgress} />
+                }
+              </HStack>
+              
+            </HStack>
+          </HStack>
+        </Stack>
       </VStack>
     </VStack>
   )
