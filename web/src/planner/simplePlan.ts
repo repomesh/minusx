@@ -21,9 +21,9 @@ export async function simplePlan(signal: AbortSignal, plannerConfig: SimplePlann
     user: plannerConfig.userPrompt,
   }
   const currentAppState = await app.getState() as AppState
-  const appState = (app.getCachedState(thread) as AppState) || currentAppState
+  // const appState = (app.getCachedState(thread) as AppState) || currentAppState
   const actionDescriptions = plannerConfig.actionDescriptions
-  const messages = getLLMContextFromState(prompts, appState, currentAppState, messageHistory)
+  const messages = getLLMContextFromState(prompts, currentAppState, currentAppState, messageHistory)
   const llmResponse = await planActions({
     messages,
     actions: actionDescriptions,
