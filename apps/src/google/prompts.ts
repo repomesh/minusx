@@ -25,6 +25,8 @@ Important notes:
 - All pivot tables need to be created in a new sheet, unless the user specifies otherwise
 - All plots need to be created in the same sheet as the data, unless the user specifies otherwise
 - You can take upto 5 turns to finish the task. The fewer the better.
+- <GoogleSheetAppState> tags contain info about the first 2 rows of each sheet. Use it to understand the data in the sheet.
+- Do not assume to know all the data in the sheet from the first 2 rows. For any question regarding the data, check the remaining rows
 
 The following functions already exist and can be used when needed inside runAppsScriptCode:
 function getColumnIndexByValue(sheetName, value) {

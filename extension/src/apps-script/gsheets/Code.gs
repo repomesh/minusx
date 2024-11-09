@@ -120,9 +120,11 @@ function gsheetGetState() {
     sheets: []
   };
 
-  // Function to interpret number formats
-  function interpretFormat(format) {
-    if (format.includes('%')) {
+  // Function to interpret number formats and detect strings
+  function interpretFormat(value, format) {
+    if (typeof value === 'string') {
+      return 'String';
+    } else if (format.includes('%')) {
       return 'Percentage';
     } else if (format.includes('$') || format.includes('€') || format.includes('£') || format.includes('₹')) {
       return 'Currency';
@@ -137,9 +139,9 @@ function gsheetGetState() {
 
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
-    var lastRow = sheet.getLastRow()
-    var lastColumn = sheet.getLastColumn()
-    var selection = getCurrentSelectionRange(sheet)
+    var lastRow = sheet.getLastRow();
+    var lastColumn = sheet.getLastColumn();
+    var selection = getCurrentSelectionRange(sheet);
     var sheetInfo = {
       isActive: activeSheet.getName() == sheetName,
       name: sheetName,
@@ -148,17 +150,18 @@ function gsheetGetState() {
       lastColumn,
     };
     if (selection.numRows != 1 || selection.numColumns != 1) {
-      sheetInfo.selectedRange = selection
+      sheetInfo.selectedRange = selection;
     }
     if (lastRow == 0 && lastColumn == 0) {
       sheetState.sheets.push(sheetInfo);
-      return
+      return;
     }
 
     var dataRange = sheet.getRange(1, 1, 10, lastColumn);
     var values = dataRange.getValues();
     var formulas = dataRange.getFormulas();
     var numberFormats = dataRange.getNumberFormats();
+    var displayValues = dataRange.getDisplayValues(); 
 
     // Identify regions with non-empty values
     var currentRegion = null;
@@ -177,20 +180,22 @@ function gsheetGetState() {
         // If region started, add non-header rows
         if (startRow < 2) {
           var rowInfo = rowData.map(function(cell, colIndex) {
-            var isFormula = formulas[row][colIndex] !== ''
+            var isFormula = formulas[row][colIndex] !== '';
+            var displayValue = displayValues[row][colIndex]
             var cellInfo = {
               value: cell,
-              format: interpretFormat(numberFormats[row][colIndex])  // Get interpreted format
+              format: interpretFormat(cell, numberFormats[row][colIndex])  // Get interpreted format
             };
+            if (cell != displayValue) {
+              cellInfo.displayValue = displayValue
+            }
             if (isFormula) {
-              cellInfo.formula = formulas[row][colIndex]
+              cellInfo.formula = formulas[row][colIndex];
             }
             return cellInfo;
           });
           if (startRow == 0) {
-            currentRegion.secondRow = rowInfo
-          } else {
-            currentRegion.thirdRow = rowInfo
+            currentRegion.secondRow = rowInfo;
           }
           startRow += 1;
         }
@@ -295,7 +300,7 @@ function readActiveSpreadsheet(region) {
   return output;                                  // Return the final output object
 }
 
-function onOpen() {
+function onOpen(e) {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('MinusX')
     .addItem('Add Sidebar', 'showSidebar')
