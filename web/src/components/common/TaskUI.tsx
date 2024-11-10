@@ -30,27 +30,23 @@ import { Thumbnails } from './Thumbnails'
 import { UserConfirmation } from './UserConfirmation'
 import { gdocReadSelected, gdocRead, gdocWrite, gdocImage, queryDOMSingle, readActiveSpreadsheet, getUserSelectedRange } from '../../app/rpc'
 import { forwardToTab } from '../../app/rpc'
-import { getApp } from '../../helpers/app'
-import { JupyterNotebookState } from '../../../../apps/src/jupyter/helpers/DOMToState'
-import { querySelectorMap as jupyterQSMap } from '../../../../apps/src/jupyter/helpers/querySelectorMap'
-import { getElementScreenCapture } from '../../app/rpc'
 import { metaPlanner } from '../../planner/metaPlan'
-import { getParsedIframeInfo } from '../../helpers/origin'
 import AutosizeTextarea from './AutosizeTextarea'
 import { setMinusxMode } from '../../app/rpc'
-import { updateAppMode, updateSidePanelTabName } from '../../state/settings/reducer'
+import { updateAppMode } from '../../state/settings/reducer'
 import { UIElementSelection } from './UIElements'
 import { capture } from '../../helpers/screenCapture/extensionCapture'
 import { addThumbnail } from '../../state/thumbnails/reducer'
-import { Coordinates, startSelection } from '../../helpers/Selection'
+import { startSelection } from '../../helpers/Selection'
 import { ImageContext } from '../../state/chat/types'
 import { QuickActionButton } from './QuickActionButton'
 import { ChatSuggestions } from './ChatSuggestions'
+import { getParsedIframeInfo } from '../../helpers/origin'
 
 
 const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
-  const currentTool = useSelector((state: RootState) => state.settings.iframeInfo.tool)
-  const currentToolVersion = useSelector((state: RootState) => state.settings.iframeInfo.toolVersion)
+  const currentTool = getParsedIframeInfo().tool
+  const currentToolVersion = getParsedIframeInfo().toolVersion
   const isSheets = currentTool == 'google' && currentToolVersion == 'sheets'
   const initialInstructions = useSelector((state: RootState) => state.thumbnails.instructions)
   const [instructions, setInstructions] = useState<string>(initialInstructions)
