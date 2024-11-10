@@ -13,6 +13,7 @@ import { capture } from '../../helpers/screenCapture/extensionCapture';
 import { TelemetryToggle } from './Settings';
 import { getParsedIframeInfo } from '../../helpers/origin';
 import { toast } from '../../app/toast';
+import { get } from 'lodash';
 
 interface HighlightItem {
   content: React.ReactNode;
@@ -105,6 +106,52 @@ const FeatureHighlightBubble = ({items}: {items: HighlightItem[]}) => {
     </Box>
   );
 };
+
+function shuffle(array: Array<any>) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
+
+const defaultDiscoveryMethods = [
+  {
+    label: "Instagram",
+    value: "Instagram",
+  },
+  {
+    label: "LinkedIn",
+    value: "LinkedIn",
+  },
+  {
+    label: "Twitter",
+    value: "Twitter",
+  },
+  {
+    label: "Google",
+    value: "Google",
+  },
+  {
+    label: "YouTube",
+    value: "YouTube",
+  },
+  {
+    label: "Friends/Colleagues",
+    value: "Friends/Colleagues",
+  },
+]
+
+shuffle(defaultDiscoveryMethods)
 
 const Auth = () => {
  
@@ -261,38 +308,13 @@ const Auth = () => {
             />
             { isFirstTimeUser ?
             <>
-            How did you find us?
+            Please tell us how you found us :)
             <CreatableSelect
               chakraStyles={{container: (base) => ({...base, width: "100%"})}}
               tagColorScheme="purple"
               placeholder="How did you find us?"
-              onChange={(value) => setDiscoveryMethod(value)}
-              options={[
-                {
-                  label: "Instagram",
-                  value: "Instagram",
-                },
-                {
-                  label: "LinkedIn",
-                  value: "LinkedIn",
-                },
-                {
-                  label: "Twitter",
-                  value: "Twitter",
-                },
-                {
-                  label: "Google",
-                  value: "Google",
-                },
-                {
-                  label: "YouTube",
-                  value: "YouTube",
-                },
-                {
-                  label: "Friends/Colleagues",
-                  value: "Friends/Colleagues",
-                },
-              ]}
+              onChange={(option) => setDiscoveryMethod(get(option, 'value', ''))}
+              options={defaultDiscoveryMethods}
             />
             </> : null
             }
