@@ -28,7 +28,7 @@ import { RootState } from '../../state/store'
 import { getSuggestions } from '../../helpers/LLM/remote'
 import { Thumbnails } from './Thumbnails'
 import { UserConfirmation } from './UserConfirmation'
-import { gdocReadSelected, gdocRead, gdocWrite, gdocImage, queryDOMSingle, readActiveSpreadsheet, getUserSelectedRange } from '../../app/rpc'
+import { gdocReadSelected, gdocRead, gdocWrite, gdocImage, queryDOMSingle, readActiveSpreadsheet, getUserSelectedRange, stopRecording, startRecording } from '../../app/rpc'
 import { forwardToTab } from '../../app/rpc'
 import { metaPlanner } from '../../planner/metaPlan'
 import AutosizeTextarea from './AutosizeTextarea'
@@ -42,6 +42,9 @@ import { ImageContext } from '../../state/chat/types'
 import { QuickActionButton } from './QuickActionButton'
 import { ChatSuggestions } from './ChatSuggestions'
 import { getParsedIframeInfo } from '../../helpers/origin'
+import { VoiceInputButton } from './VoiceInputButton'
+import { getTranscripts } from '../../helpers/recordings'
+import { configs } from '../../constants'
 
 
 const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
@@ -156,7 +159,23 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     if (!taskInProgress && ref?.current) {
       ref.current.focus();
     }
+    if (configs.VOICE_ENABLED) {
+      stopRecording()
+    }
   }, [taskInProgress]);
+
+  const isRecording = useSelector((state: RootState) => state.settings.isRecording)
+  const voiceInputOnClick = isRecording ? stopRecording : startRecording
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isRecording) {
+        const transcripts = getTranscripts()
+        setInstructions(transcripts.join(''))
+      }
+    }, 100)
+    return () => clearInterval(interval)
+  }, [isRecording])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -283,7 +302,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
             autoFocus
             aria-label='Enter Instructions'
             value={instructions}
-            isDisabled={taskInProgress}
+            isDisabled={taskInProgress || isRecording}
             onChange={(e) => setInstructions(e.target.value)}
             onKeyDown={onKeyDown}
             style={{ width: '100%', height: "100%" }}
@@ -292,6 +311,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
             <HStack justify={"space-between"}  width={"100%"}>
               <HStack gap={0}>
                 <QuickActionButton tooltip="Add Context (Coming Soon!)" onclickFn={handleSnapClick} icon={BiPaperclip} isDisabled={true}/>
+                <VoiceInputButton disabled={taskInProgress} onClick={voiceInputOnClick} isRecording={isRecording}/>
                 <QuickActionButton tooltip="Select & Ask" onclickFn={handleSnapClick} icon={BiScreenshot} isDisabled={isSheets || taskInProgress}/>
                 <QuickActionButton tooltip="Clear Chat" onclickFn={clearMessages} icon={HiOutlineRefresh} isDisabled={messages.length === 0 || taskInProgress}/>
               </HStack>
