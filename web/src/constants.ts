@@ -46,5 +46,5 @@ export const configs: Configs = {
     AUTH_BASE_URL: SERVER_BASE_URL + conf.AUTH_PATH,
     PLANNER_BASE_URL: SERVER_BASE_URL + conf.PLANNER_PATH,
     LOGGING_BASE_URL: SERVER_BASE_URL + conf.LOGGING_PATH,
-    VOICE_ENABLED: false || IS_DEV,
+    VOICE_ENABLED: true,
 }
