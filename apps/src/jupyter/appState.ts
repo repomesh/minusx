@@ -10,7 +10,7 @@ export class JupyterState extends DefaultAppState<JupyterNotebookState> {
     initialInternalState = jupyterInternalState
     actionController = new JupyterController(this)
 
-    public async setup() {
+    public async setup(retryNo = 1) {
         // Subscribe & update internal state
         // for jupyter version checking, just do a getState once here and see if it
         // errors out. kind of hacky
@@ -31,9 +31,12 @@ export class JupyterState extends DefaultAppState<JupyterNotebookState> {
                     reason: "Please upgrade to Jupyter Notebook v7.0+ or JupyterLab v4.0+ to use MinusX",
                 },
             });
+            if (retryNo > 5) {
+                return
+            }
             setTimeout(() => {
-                this.setup()
-            }, 1000)
+                this.setup(retryNo + 1)
+            }, Math.pow(2, retryNo) * 1000) // Implement exponential backoff to check Jupyter status
         }
     }
     public async getState() {
