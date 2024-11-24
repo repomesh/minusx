@@ -1,4 +1,4 @@
-import { RPCs } from "web";
+import { addNativeEventListener, RPCs } from "web";
 import { DefaultAppState } from "../base/appState";
 import { MetabaseController } from "./appController";
 import { metabaseInternalState } from "./defaultState";
@@ -8,6 +8,7 @@ import { isEmpty } from "lodash";
 import { DOMQueryMapResponse } from "extension/types";
 import { subscribe } from "web";
 import { getRelevantTablesForSelectedDb } from "./helpers/getDatabaseSchema";
+import { querySelectorMap } from "./helpers/querySelectorMap";
 
 export class MetabaseState extends DefaultAppState<MetabaseAppState> {
   initialInternalState = metabaseInternalState;
@@ -28,6 +29,23 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
     })
     // heat up cache
     await getRelevantTablesForSelectedDb('');
+
+    // Listen to clicks on Error Message
+    // const errorMessageSelector = querySelectorMap['error_message']
+    // const uniqueID = await RPCs.addNativeElements(errorMessageSelector, {
+    //   tag: 'button',
+    //   attributes: {
+    //     class: 'Button Button--primary',
+    //     style: 'width: 100px; height: 50px; background-color: black; color: white;font-size: 20px;',
+    //   },
+    //   children: ['Report Error']
+    // })
+    // addNativeEventListener({
+    //   type: "CSS",
+    //   selector: `#${uniqueID}`,
+    // }, (event) => {
+    //   console.log('Fix It button event', event)
+    // })
   }
 
   public async getState(): Promise<MetabaseAppState> {

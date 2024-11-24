@@ -3,8 +3,10 @@ import {
   SendMessageOptions,
 } from './sendMessage'
 import {
+  AttachType,
   DOMQuery,
   DOMQueryMap,
+  HTMLJSONNode,
   HttpMethod,
   QuerySelector,
   RPC,
@@ -158,6 +160,14 @@ export const gsheetGetState = () =>
   sendMessage('gsheetGetState', [], { direct: true })
 export const gsheetSetUserToken = (token: string) =>
   sendMessage('gsheetSetUserToken', [token], { direct: true })
+
+export const attachEventsListener = (
+  selector: QuerySelector, events?: string[]
+) => sendMessage('attachEventsListener', [selector, events], { log_rpc: true })
+
+export const addNativeElements = (
+  selector: QuerySelector, htmlElement: HTMLJSONNode, attachType: AttachType='lastChild'
+) => sendMessage('addNativeElements', [selector, htmlElement, attachType], { log_rpc: true })
 
 // RPCs that exposes MinusX as an API
 export { useAppFromExternal } from './sidechat'

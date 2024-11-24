@@ -8,7 +8,7 @@ import { getElementScreenCapture } from "./elementScreenCapture"
 import ripple from "./ripple"
 import { fetchData } from "./fetchData"
 import { initWindowListener, RPCPayload } from './initListeners'
-import { attachMutationListener, detachMutationListener, initMutationObserver } from "./mutationObserver"
+import { addNativeElements, attachEventsListener, attachMutationListener, detachMutationListener, initMutationObserver } from "./mutationObserver"
 import { respondToOtherTab, forwardToTab, getPendingMessage } from "./crossInstanceComms"
 import { configs } from "../../constants"
 import { startRecording, stopRecording } from "./microphone"
@@ -40,7 +40,9 @@ export const rpc = {
     forwardToTab,
     getPendingMessage,
     startRecording,
-    stopRecording
+    stopRecording,
+    attachEventsListener,
+    addNativeElements,
 }
 
 type RPC = typeof rpc
