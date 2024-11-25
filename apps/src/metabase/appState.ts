@@ -32,7 +32,8 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
     await getRelevantTablesForSelectedDb('');
 
     // Listen to clicks on Error Message
-    if (configs.IS_DEV) {
+    // if (configs.IS_DEV) {
+    if (true) {
       const errorMessageSelector = querySelectorMap['error_message_head']
       const uniqueID = await RPCs.addNativeElements(errorMessageSelector, {
         tag: 'button',
