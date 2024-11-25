@@ -3,3 +3,4 @@ export * as utils from './helpers/utils';
 export { memoize } from './cache/cache'
 export { subscribe } from './helpers/documentSubscription';
 export { addNativeEventListener } from './helpers/nativeEvents';
+export { configs } from './constants';
