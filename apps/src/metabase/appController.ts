@@ -14,6 +14,8 @@ import {
   extractTableInfo,
   getSelectedDbId,
   getTopSchemasForSelectedDb,
+  memoizedFetchTableData,
+  memoizedGetTableMapFromTop1000Cards,
 } from "./helpers/getDatabaseSchema";
 import { get, map, set, truncate } from "lodash";
 import {
@@ -243,18 +245,19 @@ export class MetabaseController extends AppController<MetabaseAppState> {
   async getTableSchemasById({ ids }: { ids: number[] }) {
     const actionContent: BlankMessageContent = { type: "BLANK" };
     // need to fetch schemas
-    const tablesPromises = ids.map(async (id) => {
-      const resp: any = await RPCs.fetchData(
-        `/api/table/${id}/query_metadata`,
-        "GET"
-      );
-      if (!resp) {
-        console.warn("Failed to get table schema", id, resp);
-        return "missing";
-      }
-      return extractTableInfo(resp, true);
-    });
+    const tablesPromises = ids.map(memoizedFetchTableData);
     const tables = await Promise.all(tablesPromises);
+    const dbId = await getSelectedDbId();
+    if (dbId) {
+      const tableMap = await memoizedGetTableMapFromTop1000Cards(dbId)
+      tables.forEach(tableInfo => {
+        if (tableInfo != "missing") {
+          if (tableInfo.id in tableMap) {
+            tableInfo.related_tables_freq = tableMap[tableInfo.id]
+          }
+        }
+      })
+    }
     const tableSchemasContent = JSON.stringify(tables);
     actionContent.content = tableSchemasContent;
     return actionContent;

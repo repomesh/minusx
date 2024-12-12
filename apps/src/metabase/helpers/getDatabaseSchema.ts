@@ -125,6 +125,20 @@ const getTop200TablesWithoutFields = async (dbId: number) => {
   return dbId? await memoizedGetTop200TablesWithoutFields(dbId) : undefined;
 }
 
+const fetchTableData = async (tableId: number) => {
+  const resp: any = await RPCs.fetchData(
+    `/api/table/${tableId}/query_metadata`,
+    "GET"
+  );
+  if (!resp) {
+    console.warn("Failed to get table schema", tableId, resp);
+    return "missing";
+  }
+  return extractTableInfo(resp, true);
+}
+
+export const memoizedFetchTableData = memoize(fetchTableData, DEFAULT_TTL);
+
 // only database info, no table info at all
 const getDatabaseInfo = async (dbId: number) => {
   const jsonResponse = await fetchData(`/api/database/${dbId}`, 'GET');
@@ -217,7 +231,62 @@ const getTablesAndSchemasFromTop1000Cards = async (dbId: number) => {
   return lowerAndDefaultSchemaAndDedupe(tableAndSchemas);
 }
 
-const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Promise<FormattedTable[]> => { 
+const getTableMapFromTop1000Cards = async (dbId: number) => {
+  const queries = await memoizeGetQueriesFromTop1000Cards(dbId);
+  let relatedTableAndSchemas: TableAndSchema[][] = [];
+  for (const query of queries) {
+    if (query) {
+      relatedTableAndSchemas.push(getTablesFromSqlRegex(query));
+    }
+  }
+  const { tables: allTables } = await memoizedGetDatabaseTablesWithoutFields(dbId)
+  const tableIDMap = _.fromPairs(allTables.map(tableInfo => [getTableKey(tableInfo), tableInfo.id]));
+  const relatedTableIDMap: Record<number, Record<number, number>> = {};
+  for (const tablesInfo of relatedTableAndSchemas) {
+    const tablesInfoIDs = tablesInfo.map(tableInfo => tableIDMap[getTableKey(tableInfo)]).filter(_.isNumber);
+    for (const tableID of tablesInfoIDs) {
+      if (!(tableID in relatedTableIDMap)) {
+        relatedTableIDMap[tableID] = {}
+      }
+      tablesInfoIDs.forEach(relatedTableID => {
+        if (relatedTableID == tableID) {
+          return
+        }
+        if (relatedTableID in relatedTableIDMap[tableID]) {
+          relatedTableIDMap[tableID][relatedTableID] += 1;
+        } else {
+          relatedTableIDMap[tableID][relatedTableID] = 1;
+        }
+      });
+    }
+  }
+  // Optimisation to remove long tail of table assocs
+  for (const tableID in relatedTableIDMap) {
+    const relatedTableCounts = relatedTableIDMap[tableID]; 
+    if (Object.keys(relatedTableCounts).length > 10) {
+      for (const relatedTableID in relatedTableCounts) {
+        if (relatedTableCounts[relatedTableID] < 2) {
+          delete relatedTableCounts[relatedTableID]
+        }
+      }
+    }
+    relatedTableIDMap[tableID] = relatedTableCounts;
+  }
+  const sortedRelatedTableIDMap: Record<number, number[][]> = {}
+  for (const tableID in relatedTableIDMap) {
+    const relatedTableCounts = _.chain(relatedTableIDMap[tableID])
+        .toPairs()
+        .orderBy(1, 'desc')
+        .map(([relatedTableID, count]) => [parseInt(relatedTableID), count])
+        .value();
+    sortedRelatedTableIDMap[tableID] = relatedTableCounts;
+  }
+  return sortedRelatedTableIDMap
+}
+
+export const memoizedGetTableMapFromTop1000Cards = _.memoize(getTableMapFromTop1000Cards);
+
+const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Promise<FormattedTable[]> => {
   // do all fetching at once?
   const [tablesFromCards, {tables: top200}, {tables: allTables}] = await Promise.all([
     getTablesAndSchemasFromTop1000Cards(dbId),
@@ -238,7 +307,17 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
   }))
   // merge top200 and validTables, prioritizing validTables
   const relevantTables = dedupeAndCountTables([...validTables, ...top200]);
-  return relevantTables
+  // Add related table IDs if available
+  const tableMap = await memoizedGetTableMapFromTop1000Cards(dbId)
+  const relevantTablesWithRelated = relevantTables.map(tableInfo => {
+    return ({
+      ...tableInfo,
+      ...(tableInfo.id in tableMap ? {
+        related_tables_freq: tableMap[tableInfo.id]
+      } : {}),
+    })
+  })
+  return relevantTablesWithRelated
 }
 
 const getMemoizedRelevantTablesForSelectedDb = _.memoize(getAllRelevantTablesForSelectedDb, (dbId: number, sql: string) => `${dbId}:${sql}`);
