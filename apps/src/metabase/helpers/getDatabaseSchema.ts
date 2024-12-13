@@ -207,8 +207,21 @@ export const memoizeGetQueriesFromTop1000Cards = memoize(getQueriesFromTop1000Ca
 
 const CHAR_BUDGET = 200000
 
+const replaceLongLiterals = (query: string) => {
+  const pattern = /\bIN\s*\(\s*('(?:[^']+)'(?:\s*,\s*'[^']+')+)\s*\)/gi;
+  let match;
+  while ((match = pattern.exec(query)) !== null) {
+    if (match[1].length > 100) {
+      const replacement = `(${match[1].slice(0, 40)}...truncated...${match[1].slice(-40)})`
+      query = query.replace(match[1], replacement)
+    }
+  }
+  return query
+}
+
 const getCleanedTopQueries = async (dbId: number) => {
-  const queries = await memoizeGetQueriesFromTop1000Cards(dbId);
+  let queries = await memoizeGetQueriesFromTop1000Cards(dbId);
+  queries = queries.map(replaceLongLiterals);
   queries.sort((a,b) => a.length - b.length);
   let totalChars = queries.reduce((acc, query) => acc + query.length, 0);
   while (totalChars > CHAR_BUDGET && queries.length > 0) {
