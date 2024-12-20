@@ -105,7 +105,7 @@ export const settingsSlice = createSlice({
     },
     setNewSearch: (state, action: PayloadAction<boolean>) => {
       state.newSearch = action.payload
-    },
+    } 
   }
 })
 

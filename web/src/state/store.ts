@@ -9,12 +9,15 @@ import logger from 'redux-logger'
 import { configs } from '../constants'
 import { plannerListener } from '../planner/planner'
 import billing from './billing/reducer'
+import semanticLayer from './semantic-layer/reducer'
+
 const combinedReducer = combineReducers({
   chat,
   auth,
   settings,
   thumbnails,
-  billing
+  billing,
+  semanticLayer
 });
 
 const rootReducer = (state: any, action: any) => {
@@ -165,12 +168,31 @@ const migrations = {
     let newState = {...state}
     newState.settings.newSearch = true
     return newState;
+  },
+  15: (state: any) => {
+    let newState = {...state}
+    if (!newState.semanticLayer) {
+      newState.semanticLayer = {
+        availableMeasures: [],
+        availableDimensions: []
+      }
+    }
+    if (!newState.thumbnails.semanticQuery) {
+      newState.thumbnails.semanticQuery = {
+        measures: [],
+        dimensions: [],
+        filters: [],
+        timeDimensions: [],
+        order: []
+      }
+    }
+    return newState
   }
 }
 
 const persistConfig = {
   key: 'root',
-  version: 12,
+  version: 15,
   storage,
   blacklist: ['billing'],
   migrate: createMigrate(migrations, { debug: false }),
