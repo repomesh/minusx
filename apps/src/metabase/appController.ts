@@ -1,4 +1,4 @@
-import { BlankMessageContent, SemanticMember, SemanticFilter, DefaultMessageContent, TimeDimension, Order } from "web/types";
+import { BlankMessageContent, SemanticFilter, DefaultMessageContent, TimeDimension, Order } from "web/types";
 import { RPCs, configs } from "web";
 import { AppController, Action } from "../base/appController";
 import {

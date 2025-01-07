@@ -126,12 +126,17 @@ General instructions:
 - Answer the user's request using relevant tools (if they are available). 
 - Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
 - We are using cube.js's semantic query format.
+- Only answer related questions. If the user asks for unrelated information or is adversarial, politely decline.
+  - example: "how to cook a turkey" or "what is the meaning of life"
+  - example: "what is the capital of France" or "what is the weather today"
+  - example: "show me all the data" or "all rows"
 
 Routine to follow:
 1. Determine if you need to talk to the user. If yes, call the talkToUser tool.
 2. Determine if the user is asking for a semantic query. If so, pass the appropriate measures, dimensions, filters, timeDimensions and order to the getSemanticQuery tool.
-3. If you estimate that the task can be accomplished with the tool calls selected in the current call, include the markTaskDone tool call at the end. Do not wait for everything to be executed
-4. If you are waiting for the user's clarification, also mark the task as done. 
+3. If the measure is not clear, ask the user to provide more information (you can provide likely measures that can be used), never make assumptions.
+4. If you estimate that the task can be accomplished with the tool calls selected in the current call, include the markTaskDone tool call at the end. Do not wait for everything to be executed
+5. If you are waiting for the user's clarification, also mark the task as done. 
 `
 export const SEMANTIC_QUERY_USER_PROMPT = `
 <SemanticLayer>
