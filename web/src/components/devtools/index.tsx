@@ -5,6 +5,7 @@ import { LLMContext } from './LLMContext'
 // import { LLMContextHistory } from './LLMContextHistory'
 import { PlannerConfigs } from './PlannerConfigs'
 import { Testing } from './Testing'
+import { CustomInstructions } from './CustomInstructions'
 import { ActionsView } from './ActionDebug';
 import { configs } from '../../constants';
 
@@ -30,6 +31,10 @@ const Monitors: MonitorDef[] = [
   {
     title: "Testing Tools",
     component: Testing
+  },
+  {
+    title: "Add Instructions",
+    component: CustomInstructions
   },
 ]
 

@@ -6,12 +6,13 @@ import {
   Text,
   Image,
   Tooltip,
-  Spacer
+  Spacer,
+  Button
 } from '@chakra-ui/react'
 import logo from '../../assets/img/logo.svg'
 import React, { forwardRef, useEffect, useState } from 'react'
 import Settings, {DevToolsToggle} from './Settings'
-import AddtionalContext from './AdditionalContext'
+import AdditionalContext from './AdditionalContext'
 import TaskUI from './TaskUI'
 import { BiCog, BiMessage, BiFolder, BiFolderOpen } from 'react-icons/bi'
 import { useSelector } from 'react-redux'
@@ -20,7 +21,7 @@ import { dispatch } from '../../state/dispatch'
 import {auth as authModule} from '../../app/api'
 import Auth from './Auth'
 import _ from 'lodash'
-import { updateAppMode, updateSidePanelTabName } from '../../state/settings/reducer'
+import { updateAppMode, updateDevToolsTabName, updateIsDevToolsOpen, updateSidePanelTabName } from '../../state/settings/reducer'
 import { DevToolsBox } from '../devtools';
 import { RootState } from '../../state/store'
 import { getPlatformShortcut } from '../../helpers/platformCustomization'
@@ -31,7 +32,7 @@ import { setBillingInfo } from '../../state/billing/reducer'
 import { setAvailableLayers } from '../../state/semantic-layer/reducer'
 import { SupportButton } from './Support'
 import { Markdown } from './Markdown'
-import { toggleMinusXRoot } from '../../app/rpc'
+import { setMinusxMode, toggleMinusXRoot } from '../../app/rpc'
 import { configs } from '../../constants'
 import axios from 'axios'
 
@@ -123,6 +124,16 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   const isDevToolsOpen = useSelector((state: RootState) => state.settings.isDevToolsOpen)
   const platformShortcut = getPlatformShortcut()
   const width = getParsedIframeInfo().width
+  const openCustomInstructions = async () => {
+    if (isDevToolsOpen) {
+      await setMinusxMode('open-sidepanel')
+      dispatch(updateIsDevToolsOpen(false))
+    } else {
+      await setMinusxMode('open-sidepanel-devtools')
+      dispatch(updateIsDevToolsOpen(true))
+      dispatch(updateDevToolsTabName("Add Instructions"))
+    }
+  }
 
   return (
     <VStack
@@ -157,7 +168,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
                 onClick={() => dispatch(updateSidePanelTabName('chat'))}
               />
             </Tooltip>
-            <Tooltip hasArrow label="Additional Context" placement='bottom' borderRadius={5} openDelay={500}>
+            {/* <Tooltip hasArrow label="Additional Context" placement='bottom' borderRadius={5} openDelay={500}>
               <IconButton
                 variant={sidePanelTabName === 'context' ? 'solid' : 'ghost'}
                 colorScheme="minusxGreen"
@@ -166,7 +177,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
                 icon={<Icon as={BiFolderOpen} boxSize={5} />}
                 onClick={() => dispatch(updateSidePanelTabName('context'))}
               />
-            </Tooltip>
+            </Tooltip> */}
             <Tooltip hasArrow label="Settings" placement='bottom' borderRadius={5} openDelay={500}>
               <IconButton
               variant={sidePanelTabName === 'settings' ? 'solid' : 'ghost'}
@@ -181,12 +192,13 @@ const AppLoggedIn = forwardRef((_props, ref) => {
         </HStack>
       </VStack>
       {sidePanelTabName === 'chat' ? <TaskUI ref={ref} /> : null}
-      {sidePanelTabName === 'context' ? <AddtionalContext /> : null}
+      {sidePanelTabName === 'context' ? <AdditionalContext /> : null}
       {sidePanelTabName === 'settings' ? <Settings /> : null}
       <HStack justifyContent="space-between" alignItems="center" width="100%" py="1">
         {/* {configs.IS_DEV ? <DevToolsToggle size={"micro"}/> : null} */}
         { !isSheets && <DevToolsToggle size={"micro"}/>}
-        { !isSheets && <Text fontSize="xs" color="minusxGreen.800" fontWeight={"bold"}>{platformShortcut} to toggle</Text>}
+        {/* { !isSheets && <Text fontSize="xs" color="minusxGreen.800" fontWeight={"bold"}>{platformShortcut} to toggle</Text>} */}
+        <Button size="xs" colorScheme="minusxBW" variant="outline" onClick={openCustomInstructions}>Add Instructions</Button>
         <SupportButton email={email} />
       </HStack>
     </VStack>
