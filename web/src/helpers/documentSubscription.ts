@@ -1,5 +1,6 @@
 import { DOMQuery, DOMQueryMap, DOMQueryMapResponse, SubscriptionPayload } from "extension/types";
 import { attachMutationListener, detachMutationListener } from "../app/rpc";
+import { captureEvent, GLOBAL_EVENTS } from "../tracking";
 
 type Callback = (d: SubscriptionPayload) => void
 
@@ -17,7 +18,10 @@ export const unsubscribe = async (id: number) => {
 }
 
 export const onSubscription = (payload: SubscriptionPayload) => {
-    const { id } = payload
+    const { id, url } = payload
+    captureEvent(GLOBAL_EVENTS.subscription, {
+        subscription_id: id, url
+    })
     if (!(id in listeners)) {
         return
     }
