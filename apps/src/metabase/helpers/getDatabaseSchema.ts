@@ -238,7 +238,7 @@ const getCleanedTopQueries = async (dbId: number) => {
   return queries
 }
 
-export const memoizeGetCleanedTopQueries = _.memoize(getCleanedTopQueries);
+export const memoizeGetCleanedTopQueries = memoize(getCleanedTopQueries, DEFAULT_TTL);
 
 const getTablesAndSchemasFromTop1000Cards = async (dbId: number) => {
   const queries = await memoizeGetQueriesFromTop1000Cards(dbId);
@@ -305,7 +305,7 @@ const getTableMapFromTop1000Cards = async (dbId: number) => {
   return sortedRelatedTableIDMap
 }
 
-export const memoizedGetTableMapFromTop1000Cards = _.memoize(getTableMapFromTop1000Cards);
+export const memoizedGetTableMapFromTop1000Cards = memoize(getTableMapFromTop1000Cards, DEFAULT_TTL);
 
 const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Promise<FormattedTable[]> => {
   // do all fetching at once?
@@ -341,7 +341,7 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
   return relevantTablesWithRelated
 }
 
-const getMemoizedRelevantTablesForSelectedDb = _.memoize(getAllRelevantTablesForSelectedDb, (dbId: number, sql: string) => `${dbId}:${sql}`);
+const getMemoizedRelevantTablesForSelectedDb = memoize(getAllRelevantTablesForSelectedDb, DEFAULT_TTL);
 
 export const getTopSchemasForSelectedDb = async (sql = ''): Promise<string[]> => {
   const dbId = await getSelectedDbId();
