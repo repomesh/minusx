@@ -7,7 +7,7 @@ import { Image } from "@chakra-ui/react"
 
 function LinkRenderer(props: any) {
   return (
-    <a href={props.href} target="_blank" rel="minusxapp">
+    <a href={props.href} target="_blank" rel="minusxapp" style={{color: 'blue'}}>
       <u>{props.children}</u>
     </a>
   );
@@ -22,6 +22,12 @@ function ModifiedParagraph(props: any) {
 function ModifiedUL(props: any) {
   return (
     <ul style={{padding: '0px 25px'}}>{props.children}</ul>
+  )
+}
+
+function ModifiedOL(props: any) {
+  return (
+    <ol style={{padding: '0px 20px', margin: '5px'}}>{props.children}</ol>
   )
 }
 
@@ -44,6 +50,6 @@ function ImageComponent(props: any) {
 
 export function Markdown({content}: {content: string}) {
   return (
-    <MarkdownComponent remarkPlugins={[remarkGfm]} className={"markdown"} components={{ a: LinkRenderer, p: ModifiedParagraph, ul: ModifiedUL, img: ImageComponent}}>{content}</MarkdownComponent>
+    <MarkdownComponent remarkPlugins={[remarkGfm]} className={"markdown"} components={{ a: LinkRenderer, p: ModifiedParagraph, ul: ModifiedUL, ol: ModifiedOL, img: ImageComponent}}>{content}</MarkdownComponent>
   )
 }
