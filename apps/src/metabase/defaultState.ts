@@ -4,7 +4,9 @@ import {
   ACTION_DESCRIPTIONS_PLANNER,
   ACTION_DESCRIPTIONS_SEMANTIC_QUERY
 } from "./actionDescriptions";
+import { DatabaseInfoWithTables } from "./helpers/getDatabaseSchema";
 import { querySelectorMap } from "./helpers/querySelectorMap";
+import { FormattedTable } from "./helpers/types";
 
 import {
   DASHBOARD_PLANNER_SYSTEM_PROMPT,
@@ -17,7 +19,17 @@ import {
   SEMANTIC_QUERY_USER_PROMPT
 } from "./prompts";
 
-export const metabaseInternalState: InternalState = {
+export interface MetabaseContext {
+  dbId: number;
+  relevantTables: FormattedTable[]
+  dbInfo: DatabaseInfoWithTables
+}
+
+interface MetabaseInternalState extends InternalState {
+  toolContext: MetabaseContext
+}
+
+export const metabaseInternalState: MetabaseInternalState = {
   isEnabled: {
     value: false,
     reason: "Loading...",
@@ -81,6 +93,7 @@ export const metabaseInternalState: InternalState = {
       attrs: ["class"],
     },
   },
+  toolContext: {},
   helperMessage: `Here's a [user manual](https://docs.minusx.ai/en/collections/10790008-minusx-in-metabase) to get you started.
 
   **tl;dr:** MinusX has 3 modes:

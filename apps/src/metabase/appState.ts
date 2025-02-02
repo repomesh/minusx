@@ -4,13 +4,15 @@ import { MetabaseController } from "./appController";
 import { metabaseInternalState } from "./defaultState";
 import { convertDOMtoState, MetabaseAppState } from "./helpers/DOMToState";
 import { isDashboardPage } from "./helpers/dashboard/util";
-import { cloneDeep, isEmpty } from "lodash";
+import { cloneDeep, get, isEmpty } from "lodash";
 import { DOMQueryMapResponse } from "extension/types";
 import { subscribe } from "web";
-import { getCleanedTopQueries, getRelevantTablesForSelectedDb } from "./helpers/getDatabaseSchema";
+import { getCleanedTopQueries, getRelevantTablesForSelectedDb, memoizedGetDatabaseTablesWithoutFields } from "./helpers/getDatabaseSchema";
 import { querySelectorMap } from "./helpers/querySelectorMap";
 import { getSelectedDbId } from "./helpers/getUserInfo";
+import { createRunner, handlePromise } from "../common/utils";
 
+const runStoreTasks = createRunner()
 
 export class MetabaseState extends DefaultAppState<MetabaseAppState> {
   initialInternalState = metabaseInternalState;
@@ -28,6 +30,34 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
       state.update({
         isEnabled: toolEnabledNew,
       });
+      runStoreTasks(async () => {
+        const dbId = await getSelectedDbId();
+        const oldDbId = get(this.useStore().getState().toolContext, 'dbId')
+        if (dbId && dbId !== oldDbId) {
+          const [relevantTables, dbInfo] = await Promise.all([
+            handlePromise(getRelevantTablesForSelectedDb(''), "Failed to get relevant tables", []),
+            handlePromise(memoizedGetDatabaseTablesWithoutFields(dbId), "Failed to get database info", {
+              name: '',
+              description: '',
+              id: 0,
+              dialect: '',
+              dbms_version: {
+                flavor: '',
+                version: '',
+                semantic_version: []
+              },
+              tables: []
+            })
+          ])
+          state.update({
+            toolContext: {
+              dbId,
+              relevantTables,
+              dbInfo
+            }
+          })
+        }
+      })
     })
     // heat up cache
     const heatUpCache = async (times = 0) => {
