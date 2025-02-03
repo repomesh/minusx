@@ -57,7 +57,7 @@ export const FilteredTable = ({ data, selectedData, searchKey, displayKeys }: {d
                     p={2}
                     cursor="pointer"
                     _hover={{ bg: "gray.100" }}
-                    onClick={() => handleAdd(item.name)}
+                    onMouseDown={() => handleAdd(item.name)}
                     >
                     {item.name}
                     </Box>
