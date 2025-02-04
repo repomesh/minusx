@@ -5,7 +5,7 @@ import { getApp } from '../../helpers/app';
 import { getParsedIframeInfo } from "../../helpers/origin"
 import { isEmpty } from 'lodash';
 import { Text, Box, Badge, Link} from "@chakra-ui/react";
-import { addTable, removeTable, TableDiff } from "../../state/settings/reducer";
+import { applyTableDiff, TableInfo } from "../../state/settings/reducer";
 import { dispatch, } from '../../state/dispatch';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
@@ -25,14 +25,20 @@ export const Context: React.FC<null> = () => {
   const dbInfo = toolContext.dbInfo
   const allTables = dbInfo?.tables || []
 
-  const updatedRelevantTables = applyTableDiffs(relevantTables, allTables, tableDiff)
+  const updatedRelevantTables = applyTableDiffs(relevantTables, allTables, tableDiff, dbInfo.id)
   
-  const updateAddTables = (value: string) => {
-    dispatch(addTable(value))
+  const updateAddTables = (table: TableInfo) => {
+    dispatch(applyTableDiff({
+      actionType: 'add',
+      table
+    }))
   }
 
-  const updateRemoveTables = (value: string) => {
-    dispatch(removeTable(value))
+  const updateRemoveTables = (table: TableInfo) => {
+    dispatch(applyTableDiff({
+      actionType: 'remove',
+      table
+    }))
   }
   
   return <>
@@ -46,7 +52,7 @@ export const Context: React.FC<null> = () => {
     <Text fontSize="sm"><Text as="span">{dbInfo.description}</Text></Text>
     <Text fontSize="sm"><Text as="span">SQL Dialect: </Text><Badge color={"minusxGreen.600"}>{dbInfo.dialect}</Badge></Text>
     </Box>
-    <FilteredTable data={allTables} selectedData={updatedRelevantTables} searchKey={"name"} displayKeys={['name', 'description']} addFn={updateAddTables} removeFn={updateRemoveTables}/>
+    <FilteredTable dbId={dbInfo.id} data={allTables} selectedData={updatedRelevantTables} searchKey={"name"} displayKeys={['name', 'description']} addFn={updateAddTables} removeFn={updateRemoveTables}/>
     <Text fontSize="sm" color={"minusxGreen.600"} textAlign={"right"} mt={2}>{updatedRelevantTables.length} out of {allTables.length} tables selected</Text>
   </>
 }

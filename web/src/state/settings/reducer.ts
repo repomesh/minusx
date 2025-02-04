@@ -1,13 +1,22 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { defaultIframeInfoWeb, IframeInfoWeb } from '../../helpers/origin'
+import { isEqual } from 'lodash'
+import { contains } from '../../helpers/utils'
 
 export type AppMode = 'sidePanel' | 'selection'
 export type SidePanelTabName = 'chat' | 'settings' | 'context'
 export type DevToolsTabName = 'Context' | 'Action History' | 'Prompts' | 'Available Actions' | 'Planner Configs' | 'Context History' | 'Testing Tools' | 'Custom Instructions' | 'General Settings' | 'Data Catalog' | 'Dev Context'
+
+export interface TableInfo {
+  name: string
+  schema: string
+  dbId: number
+}
+
 export interface TableDiff {
-  table: string
-  action: 'add' | 'remove'
+  add: TableInfo[]
+  remove: TableInfo[]
 }
 
 //--isAppOpen
@@ -38,7 +47,7 @@ interface Settings {
   isRecording: boolean
   aiRules: string
   savedQueries: boolean
-  tableDiff: TableDiff[]
+  tableDiff: TableDiff
 }
 
 const initialState: Settings = {
@@ -106,26 +115,22 @@ export const settingsSlice = createSlice({
     setSavedQueries: (state, action: PayloadAction<boolean>) => {
       state.savedQueries = action.payload
     },
-    addTable(state, action: PayloadAction<string>) {
-      const tableInDiff = state.tableDiff.filter((table) => table.table === action.payload)
-      if (tableInDiff.length === 0) {
-        state.tableDiff.push({table: action.payload, action: 'add'})
-      } else {
-        if (tableInDiff[0].action === 'remove') {
-          state.tableDiff = state.tableDiff.filter((table) => table.table !== action.payload)
+    applyTableDiff(state, action: PayloadAction<{actionType: keyof TableDiff, table: TableInfo}>) {
+      const {actionType, table} = action.payload
+      if (actionType === 'add') {
+        if (contains(state.tableDiff.remove, table)) {
+          state.tableDiff.remove = state.tableDiff.remove.filter((table) => !isEqual(table, table))
+        } else if (!contains(state.tableDiff.add, table)) {
+          state.tableDiff.add.push(table)
+        }
+      } else if (actionType === 'remove') {
+        if (contains(state.tableDiff.add, table)) {
+          state.tableDiff.add = state.tableDiff.add.filter((table) => !isEqual(table, table))
+        } else if (!contains(state.tableDiff.remove, table)) {
+          state.tableDiff.remove.push(table)
         }
       }
     },
-    removeTable(state, action: PayloadAction<string>) {
-      const tableInDiff = state.tableDiff.filter((table) => table.table === action.payload)
-      if (tableInDiff.length === 0) {
-        state.tableDiff.push({table: action.payload, action: 'remove'})
-      } else {
-        if (tableInDiff[0].action === 'add') {
-          state.tableDiff = state.tableDiff.filter((table) => table.table !== action.payload)
-        }
-      }
-    }
   }
 })
 
@@ -134,7 +139,7 @@ export const { updateIsLocal, updateUploadLogs,
   updateIsAppOpen, updateAppMode, updateIsDevToolsOpen,
   updateSidePanelTabName, updateDevToolsTabName, setSuggestQueries,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules, setSavedQueries,
-  addTable, removeTable
+  applyTableDiff
 } = settingsSlice.actions
 
 export default settingsSlice.reducer
