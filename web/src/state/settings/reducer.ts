@@ -48,6 +48,7 @@ interface Settings {
   aiRules: string
   savedQueries: boolean
   tableDiff: TableDiff
+  drMode: boolean
 }
 
 const initialState: Settings = {
@@ -69,7 +70,8 @@ const initialState: Settings = {
   tableDiff: {
     add: [],
     remove: []
-  }
+  },
+  drMode: false
 }
 
 export const settingsSlice = createSlice({
@@ -134,6 +136,9 @@ export const settingsSlice = createSlice({
         }
       }
     },
+    setDRMode: (state, action: PayloadAction<boolean>) => {
+      state.drMode = action.payload
+    },
   }
 })
 
@@ -142,7 +147,7 @@ export const { updateIsLocal, updateUploadLogs,
   updateIsAppOpen, updateAppMode, updateIsDevToolsOpen,
   updateSidePanelTabName, updateDevToolsTabName, setSuggestQueries,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules, setSavedQueries,
-  applyTableDiff
+  applyTableDiff, setDRMode
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

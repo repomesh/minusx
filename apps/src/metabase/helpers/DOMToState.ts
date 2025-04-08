@@ -1,5 +1,5 @@
 import { RPCs } from 'web'
-import { getRelevantTablesForSelectedDb, getDatabaseInfoForSelectedDb, extractTableInfo, memoizedGetDatabases, memoizedGetDatabaseTablesWithoutFields, extractDbInfo } from './getDatabaseSchema';
+import { getRelevantTablesForSelectedDb, getDatabaseInfoForSelectedDb, extractTableInfo, memoizedGetDatabases, memoizedGetDatabaseTablesWithoutFields, extractDbInfo, getTablesWithFields } from './getDatabaseSchema';
 import { getAndFormatOutputTable, getSqlErrorMessage } from './operations';
 import { isDashboardPage } from './dashboard/util';
 import { DashboardInfo } from './dashboard/types';
@@ -71,20 +71,8 @@ export async function convertDOMtoStateSQLQuery() {
   const availableDatabases = (await memoizedGetDatabases())?.data?.map(({ name }) => name);
   const selectedDatabaseInfo = await getDatabaseInfoForSelectedDb();
   const sqlQuery = await getMetabaseState('qb.card.dataset_query.native.query') as string
-  const tables = (await getRelevantTablesForSelectedDb(sqlQuery)).map(table => extractTableInfo(table));
-  const dbId = await getSelectedDbId()
-  const relevantTables = await (async () => {
-    if (!dbId) {
-      return []
-    }
-    const appSettings = RPCs.getAppSettings()
-    console.log('App settings are', appSettings)
-    const dbTables = await handlePromise(memoizedGetDatabaseTablesWithoutFields(dbId), "Failed to get database tables", {
-      ...extractDbInfo({}),
-      tables: []
-    })
-    return applyTableDiffs(tables, dbTables.tables, appSettings.tableDiff, dbId)
-  })()
+  const appSettings = RPCs.getAppSettings()
+  const relevantTablesWithFields = await getTablesWithFields(appSettings.tableDiff, appSettings.drMode)
   
 
   const queryExecuted = await getMetabaseState('qb.queryResults') !== null;
@@ -99,7 +87,7 @@ export async function convertDOMtoStateSQLQuery() {
   const metabaseAppStateSQLEditor: MetabaseAppStateSQLEditor = {
     availableDatabases,
     selectedDatabaseInfo,
-    relevantTables,
+    relevantTables: relevantTablesWithFields,
     sqlQuery,
     queryExecuted,
     sqlEditorState: isNativeEditorOpen ? 'open' : 'closed',

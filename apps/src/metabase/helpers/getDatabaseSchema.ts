@@ -3,7 +3,8 @@ import { FormattedTable, SearchApiResponse } from './types';
 import { getTablesFromSqlRegex, TableAndSchema } from './parseSql';
 import _ from 'lodash';
 import { getSelectedDbId, getUserQueries, getUserTableMap, getUserTables, searchUserQueries } from './getUserInfo';
-import { handlePromise } from '../../common/utils';
+import { applyTableDiffs, handlePromise } from '../../common/utils';
+import { TableDiff } from 'web/types';
 
 const { fetchData } = RPCs;
 
@@ -234,7 +235,11 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
   ]);
   const allUserTables = dedupeAndCountTables([...tablesFromSql, ...userTables]);
   const validTables = validateTablesInDB(allUserTables, allDBTables);
-  const dedupedTables = dedupeAndCountTables(validTables)
+  const dedupedTables = dedupeAndCountTables([...validTables, ...allDBTables]);
+  dedupedTables.forEach(tableInfo => {
+    tableInfo.count = tableInfo.count || 1;
+    tableInfo.count = tableInfo.count - 1
+  })
   const fullTableInfo = addTableJoins(dedupedTables, tableMap);
   return fullTableInfo
 }
@@ -253,6 +258,70 @@ export const searchTables = async (userId: number, dbId: number, query: string):
   return dedupedTables
 }
 
+interface FieldInfo {
+  name: string;
+  description: string;
+  table_name: string;
+  schema: string;
+}
+
+const getDatabaseFields = async (): Promise<FieldInfo[]> => {
+  const dbId = await getSelectedDbId();
+  if (!dbId) {
+    console.warn("[minusx] No database selected when getting field info");
+    return [];
+  }
+  return await fetchData(`/api/database/${dbId}/fields`, 'GET') as FieldInfo[];
+}
+
+export const memoizedGetDatabaseFields = memoize(getDatabaseFields, DEFAULT_TTL);
+
+export const getTablesWithFields = async (tableDiff?: TableDiff, drMode = false) => {
+  const dbId = await getSelectedDbId();
+  if (!dbId) {
+    console.warn("[minusx] No database selected when getting tables with fields");
+    return [];
+  }
+  let tables = await getAllRelevantTablesForSelectedDb(dbId, '');
+  if (tableDiff) {
+    tables = applyTableDiffs(tables, tables, tableDiff, dbId);
+  }
+  if (!drMode) {
+    return tables;
+  }
+  const tableIds = tables.map((table) => table.id);
+  let tableInfos = await Promise.all(tableIds.map(memoizedFetchTableData));
+  const fields = await memoizedGetDatabaseFields()
+  const fieldsMap: { [key: string]: FieldInfo[] } = {}
+  for (let field of fields) {
+    const key = `${field.schema} <> ${field.table_name}`;
+    if (key in fieldsMap) {
+      fieldsMap[key].push(field);
+    } else {
+      fieldsMap[key] = [field];
+    }
+  }
+  return tableInfos.filter(tableInfo => tableInfo != "missing").map(tableInfo => {
+    const tableKey = `${tableInfo.schema} <> ${tableInfo.name}`;
+    const fields = fieldsMap[tableKey] || [];
+    const columnMap = _.fromPairs(_.map(tableInfo.columns, (column) => [column.name, column]))
+    const fieldOrColumns = fields.map(field => {
+      const column = columnMap[field.name];
+      return {
+        ..._.omit(field, ['table_name', 'schema', 'display_name', 'id', 'table_id']),
+        ...column,
+      }
+    })
+    if (_.isEmpty(fieldOrColumns)) {
+      return tableInfo
+    }
+    return {
+      ...tableInfo,
+      columns: fieldOrColumns
+    }
+  })
+}
+
 export const getRelevantTablesForSelectedDb = async (sql: string): Promise<FormattedTable[]> => {
   const dbId = await getSelectedDbId();
   if (!dbId) {
@@ -260,7 +329,7 @@ export const getRelevantTablesForSelectedDb = async (sql: string): Promise<Forma
     return [];
   }
   const relevantTables = await getAllRelevantTablesForSelectedDb(dbId, sql);
-  const relevantTablesTop50 = relevantTables.slice(0, 50);
+  const relevantTablesTop50 = relevantTables.slice(0, 20);
   return relevantTablesTop50;
 }
 
