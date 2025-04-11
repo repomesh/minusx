@@ -122,6 +122,9 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   }, [])
   useEffect(() => {
     const attemptRefresh = () => {
+      if (configs.IS_DEV) {
+        return
+      }
       authModule.refresh().then(({ expired, changed, session_jwt, profile_id, email }) => {
         if (expired) {
           logoutState()
