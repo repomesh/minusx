@@ -24,6 +24,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import ReactJson from 'react-json-view';
 import { Task, Tasks as TasksInfo } from '../../state/chat/reducer';
+import { get, last } from 'lodash';
 
 // --- Type Definitions ---
 
@@ -228,6 +229,7 @@ export const Tasks: React.FC = () => {
 
   const isEmpty = allTasks.length === 0;
   const isLoading = !isEmpty && !allTasks[0].result
+  const isStarting = get(last(activeThread.messages), 'role') == 'user'
 
   return (
     <HStack
@@ -262,7 +264,9 @@ export const Tasks: React.FC = () => {
           </HStack>
 
           <Box background={'minusxBW.200'} borderRadius={5} p={2} overflowX="auto">
-            {isEmpty ? (
+            {isStarting ? (
+               <Text fontSize="sm" color="minusxBW.600" textAlign="center">Loading tasks...</Text>
+            ) : isEmpty ? (
               <Text fontSize="sm" color="minusxBW.600" textAlign="center">No tasks have been initiated yet.</Text>
             ) : (
               <VStack align="stretch" spacing={0}>
