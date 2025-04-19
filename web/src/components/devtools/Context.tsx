@@ -81,11 +81,11 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
 export const Context: React.FC = () => {
     const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
     const tool = getParsedIframeInfo().tool
+    const dbInfo = toolContext.dbInfo
+    const { isOpen, onOpen: modalOpen, onClose: modalClose } = useDisclosure()
     if (tool != 'metabase' || isEmpty(toolContext)) {
       return <Text>Coming soon!</Text>
     }
-    const dbInfo = toolContext.dbInfo
-    const { isOpen, onOpen: modalOpen, onClose: modalClose } = useDisclosure()
 
     return <>
         <Text fontSize="lg" fontWeight="bold">Context</Text>
