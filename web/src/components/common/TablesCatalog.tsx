@@ -24,6 +24,7 @@ export const TablesCatalog: React.FC<null> = () => {
   const allTables = dbInfo?.tables || []
 
   const updatedRelevantTables = applyTableDiffs('', allTables, tableDiff, dbInfo.id)
+  const [isChanged, setIsChanged] = React.useState(false)
   
   const updateAddTables = (tables: TableInfo[]) => {
     dispatch(applyTableDiff({
@@ -32,17 +33,6 @@ export const TablesCatalog: React.FC<null> = () => {
     }))
   }
   const updateRemoveTables = (tables: TableInfo[], emptyAllowed = false) => {
-    if (updatedRelevantTables.length == tables.length && !emptyAllowed) {
-      toast({
-        title: "At least one table must be selected.",
-        description: "You need at least one table to be relevant.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      })
-      return
-    }
     dispatch(applyTableDiff({
       actionType: 'remove',
       tables
@@ -75,9 +65,10 @@ export const TablesCatalog: React.FC<null> = () => {
   const isAnyChange = tableDiff.remove.length > 0 || isAnyTablesAdded()
 
   useEffect(() => {
-    if (isEmpty(updatedRelevantTables)) {
+    if (isEmpty(updatedRelevantTables) && !isChanged) {
       resetRelevantTables()
     }
+    setIsChanged(true)
   }, [updatedRelevantTables])
   
   return <>
