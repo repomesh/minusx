@@ -76,8 +76,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   const getStatusIcon = () => {
     if (task.result != null) {
-        const resultString = typeof task.result === 'string' ? task.result : JSON.stringify(task.result);
-        const isError = (typeof task.result === 'object' && task.result !== null && (task.result as any).error) || /error|fail|exception/i.test(resultString);
+        const isError = (typeof task.result === 'object' && task.result !== null && (task.result as any).error);
         if (isError) {
             return <Icon as={BiSolidErrorCircle} color="red.500" title="Failed" />;
         }
@@ -161,7 +160,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           {hasResult && (
             <VStack align="stretch" spacing={1} mb={2}>
                <HStack spacing={1} alignItems="flex-start">
-                    <Icon as={BiSolidInfoCircle} color={ (typeof task.result === 'string' && /error|fail|exception/i.test(task.result)) || (typeof task.result === 'object' && task.result !== null && (task.result as any).error) ? "red.500" : "purple.500"} boxSize={3.5} mt="0.5"/>
+                    <Icon as={BiSolidInfoCircle} color={ (typeof task.result === 'object' && task.result !== null && (task.result as any).error) ? "red.500" : "purple.500"} boxSize={3.5} mt="0.5"/>
                    <Text fontSize="xs" fontWeight="bold" color="minusxBW.700" flexShrink={0}>Result:</Text>
                    <Box flexGrow={1} overflowX="auto">
                        {typeof task.result === 'string' ? (
