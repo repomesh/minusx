@@ -10,6 +10,7 @@ import { RootState } from '../../state/store';
 import { applyTableDiffs } from "apps";
 import { isEmpty, sortBy } from "lodash";
 import { BiSolidMagicWand } from "react-icons/bi";
+import { toast } from "../../app/toast";
 
 const useAppStore = getApp().useStore()
 
@@ -30,18 +31,26 @@ export const TablesCatalog: React.FC<null> = () => {
       tables
     }))
   }
-  const updateAddTable = (tables: TableInfo) => updateAddTables([tables])
-
-  const updateRemoveTables = (tables: TableInfo[]) => {
+  const updateRemoveTables = (tables: TableInfo[], emptyAllowed = false) => {
+    if (updatedRelevantTables.length == tables.length && !emptyAllowed) {
+      toast({
+        title: "At least one table must be selected.",
+        description: "You need at least one table to be relevant.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      })
+      return
+    }
     dispatch(applyTableDiff({
       actionType: 'remove',
       tables
     }))
   }
-  const updateRemoveTable = (tables: TableInfo) => updateRemoveTables([tables])
 
   const resetRelevantTables = () => {
-    updateRemoveTables(tableDiff.add.filter((item: TableInfo) => item.dbId == dbInfo.id))
+    updateRemoveTables(tableDiff.add.filter((item: TableInfo) => item.dbId == dbInfo.id), true)
     updateAddTables(relevantTables.slice(0, 15).map((table) => ({
       name: table.name,
       schema: table.schema,
@@ -64,7 +73,6 @@ export const TablesCatalog: React.FC<null> = () => {
   }
 
   const isAnyChange = tableDiff.remove.length > 0 || isAnyTablesAdded()
-  const resetTables = isAnyChange ? <Button variant="link" colorScheme="minusxGreen" fontSize="sm" onClick={resetRelevantTables}>Reset Tables</Button> : null
 
   useEffect(() => {
     if (isEmpty(updatedRelevantTables)) {
@@ -86,9 +94,8 @@ export const TablesCatalog: React.FC<null> = () => {
         </Button>
         {/* <Text fontSize="sm" color={"minusxGreen.600"} textAlign={"right"}>[{updatedRelevantTables.length} out of {allTables.length} tables selected]</Text> */}
     </HStack>
-    {/* <Text color={"minusxBW.600"} fontSize="sm">The selected tables are in MinusX context while answering queries. You can select/unselect tables to control the context. {resetTables}</Text> */}
     <Text fontSize="xs" color={"minusxGreen.600"}><Link width={"100%"} textAlign={"center"} textDecoration={"underline"} href="https://docs.minusx.ai/en/articles/10501728-modify-relevant-tables-list" isExternal>What are Default Tables?</Link></Text>
-    <FilteredTable dbId={dbInfo.id} data={allTables} selectedData={updatedRelevantTables} addFn={updateAddTable} removeFn={updateRemoveTable}/>
+    <FilteredTable dbId={dbInfo.id} data={allTables} selectedData={updatedRelevantTables} addFn={updateAddTables} removeFn={updateRemoveTables}/>
     <Text fontSize="sm" color={"minusxGreen.600"} textAlign={"right"} fontWeight={"bold"}>[{updatedRelevantTables.length} out of {allTables.length} tables selected]</Text>
   </>
 }
