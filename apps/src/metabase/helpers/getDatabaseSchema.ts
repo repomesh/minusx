@@ -1,7 +1,7 @@
 import { memoize, RPCs } from 'web'
 import { FormattedTable, SearchApiResponse } from './types';
 import { getTablesFromSqlRegex, TableAndSchema } from './parseSql';
-import _ from 'lodash';
+import _, { isEmpty } from 'lodash';
 import { getSelectedDbId, getUserQueries, getUserTableMap, getUserTables, searchUserQueries } from './getUserInfo';
 import { applyTableDiffs, handlePromise } from '../../common/utils';
 import { TableDiff } from 'web/types';
@@ -40,6 +40,7 @@ interface DatabaseInfo {
   description: string;
   id: number;
   dialect: string;
+  default_schema?: string;
   dbms_version: {
     flavor: string;
     version: string;
@@ -51,11 +52,12 @@ export interface DatabaseInfoWithTables extends DatabaseInfo {
   tables: FormattedTable[];
 }
 
-export const extractDbInfo = (db: any): DatabaseInfo => ({
+export const extractDbInfo = (db: any, default_schema: string): DatabaseInfo => ({
   name: _.get(db, 'name', ''),
   description: _.get(db, 'description', ''),
   id: _.get(db, 'id', 0),
   dialect: _.get(db, 'engine', ''),
+  default_schema,
   dbms_version: {
     flavor: _.get(db, 'dbms_version.flavor', ''),
     version: _.get(db, 'dbms_version.version', ''),
@@ -88,6 +90,58 @@ export const extractTableInfo = (table: any, includeFields: boolean = false, sch
   ),
 })
 
+function getDefaultSchema(databaseInfo) {
+  const engine = databaseInfo?.engine;
+  const details = databaseInfo?.details || {};
+  
+  // If schema is explicitly set, always respect it
+  if (details.schema) {
+    return details.schema;
+  }
+
+  // Mapping of default schemas
+  const DEFAULT_SCHEMAS = {
+    postgres: "public",
+    redshift: "public",
+    sqlserver: "dbo",
+    duckdb: "main",
+    sqlite: "main",
+    h2: "PUBLIC"
+  };
+
+  if (engine in DEFAULT_SCHEMAS) {
+    return DEFAULT_SCHEMAS[engine];
+  }
+
+  // Engines where schema = database name
+  if (["mysql", "mariadb", "clickhouse"].includes(engine)) {
+    return details.dbname || null;
+  }
+
+  // BigQuery case: dataset_id behaves like schema
+  if (engine === "bigquery") {
+    return details.dataset_id || null;
+  }
+
+  // Snowflake: no reliable way unless explicitly set
+  if (engine === "snowflake") {
+    return null;
+  }
+
+  // MongoDB: no schema concept
+  if (engine === "mongo") {
+    return null;
+  }
+
+  // Presto/Trino: no real default schema, needs explicit context
+  if (["presto", "trino"].includes(engine)) {
+    return null;
+  }
+
+  // Default fallback
+  return null;
+}
+
 /**
  * Get the database tables without their fields
  * @param dbId id of the database
@@ -95,8 +149,9 @@ export const extractTableInfo = (table: any, includeFields: boolean = false, sch
  */
 async function getDatabaseTablesWithoutFields(dbId: number): Promise<DatabaseInfoWithTables> {
   const jsonResponse = await fetchData(`/api/database/${dbId}?include=tables`, 'GET');
+  const defaultSchema = getDefaultSchema(jsonResponse);
   return {
-    ...extractDbInfo(jsonResponse),
+    ...extractDbInfo(jsonResponse, defaultSchema),
     tables: _.map(_.get(jsonResponse, 'tables', []), (table: any) => (extractTableInfo(table, false)))
   }
 }
@@ -120,8 +175,9 @@ export const memoizedFetchTableData = memoize(fetchTableData, DEFAULT_TTL);
 // only database info, no table info at all
 const getDatabaseInfo = async (dbId: number) => {
   const jsonResponse = await fetchData(`/api/database/${dbId}`, 'GET');
+  const defaultSchema = getDefaultSchema(jsonResponse);
   return {
-    ...extractDbInfo(jsonResponse),
+    ...extractDbInfo(jsonResponse, defaultSchema),
   }
 };
 
@@ -202,8 +258,16 @@ export const getCleanedTopQueries = async (dbId: number) => {
   return queries
 }
 
-const validateTablesInDB = (tables: TableAndSchema[], allDBTables: FormattedTable[]) => {
+const validateTablesInDB = (tables: TableAndSchema[], allDBTables: FormattedTable[], default_schema?: string) => {
   const allTablesAsMap = _.fromPairs(allDBTables.map(tableInfo => [getTableKey(tableInfo), tableInfo]));
+  if (default_schema) {
+    tables = tables.map(tableInfo => {
+      return {
+        ...tableInfo,
+        schema: tableInfo.schema?.toLowerCase() || default_schema.toLowerCase()
+      }
+    })
+  }
   return tables.filter(
     tableInfo => getTableKey(tableInfo) in allTablesAsMap
   ).map(tableInfo => ({
@@ -225,16 +289,16 @@ const addTableJoins = (tables: FormattedTable[], tableMap: Record<number, number
 
 const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Promise<FormattedTable[]> => {
   const tablesFromSql = lowerAndDefaultSchemaAndDedupe(getTablesFromSqlRegex(sql));
-  const [userTables, {tables: allDBTables}, tableMap] = await Promise.all([
+  const [userTables, {tables: allDBTables, default_schema}, tableMap] = await Promise.all([
     getUserTables(),
     handlePromise(memoizedGetDatabaseTablesWithoutFields(dbId), "Failed to get database tables", {
-      ...extractDbInfo({}),
+      ...extractDbInfo({}, ''),
       tables: []
     }),
     getUserTableMap()
   ]);
   const allUserTables = dedupeAndCountTables([...tablesFromSql, ...userTables]);
-  const validTables = validateTablesInDB(allUserTables, allDBTables);
+  const validTables = validateTablesInDB(allUserTables, allDBTables, default_schema);
   const dedupedTables = dedupeAndCountTables([...validTables, ...allDBTables]);
   dedupedTables.forEach(tableInfo => {
     tableInfo.count = tableInfo.count || 1;
@@ -245,7 +309,7 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
 }
 
 export const searchTables = async (userId: number, dbId: number, query: string): Promise<FormattedTable[]> => {
-  const [userTables, {tables: allDBTables}] = await Promise.all([
+  const [userTables, {tables: allDBTables, default_schema}] = await Promise.all([
     searchUserQueries(userId, dbId, query),
     memoizedGetDatabaseTablesWithoutFields(dbId),
   ]).catch(err => {
@@ -253,7 +317,7 @@ export const searchTables = async (userId: number, dbId: number, query: string):
     throw err;
   });
   const allUserTables = dedupeAndCountTables(userTables);
-  const validTables = validateTablesInDB(allUserTables, allDBTables);
+  const validTables = validateTablesInDB(allUserTables, allDBTables, default_schema);
   const dedupedTables = dedupeAndCountTables(validTables)
   return dedupedTables
 }
