@@ -20,10 +20,10 @@ import AbortTaskButton from './AbortTaskButton'
 import { ChatSection } from './Chat'
 import { BiScreenshot, BiPaperclip, BiMessageAdd, BiEdit, BiTrash, BiBookBookmark, BiTable, BiRefresh } from 'react-icons/bi'
 import chat from '../../chat/chat'
-import _ from 'lodash'
+import _, { get, isEmpty, isUndefined, sortBy } from 'lodash'
 import { abortPlan, startNewThread } from '../../state/chat/reducer'
 import { resetThumbnails, setInstructions as setTaskInstructions } from '../../state/thumbnails/reducer'
-import { setSuggestQueries, setDemoMode } from '../../state/settings/reducer'
+import { setSuggestQueries, setDemoMode, DEFAULT_TABLES, ContextCatalog, TableInfo } from '../../state/settings/reducer'
 import { RootState } from '../../state/store'
 import { getSuggestions } from '../../helpers/LLM/remote'
 import { Thumbnails } from './Thumbnails'
@@ -54,6 +54,7 @@ import { FormattedTable, MetabaseContext } from 'apps/types';
 import { getApp } from '../../helpers/app';
 import { applyTableDiffs } from "apps";
 import { toast } from '../../app/toast'
+import { NUM_RELEVANT_TABLES, resetRelevantTables } from './TablesCatalog'
 
 
 
@@ -83,10 +84,30 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const availableCatalogs = useSelector((state: RootState) => state.settings.availableCatalogs)
   const defaultTableCatalog = useSelector((state: RootState) => state.settings.defaultTableCatalog)
   const allCatalogs = [...availableCatalogs, defaultTableCatalog]
-  const selectedCatalogName = allCatalogs.find((catalog) => catalog.value === selectedCatalog)?.name || "No Tables"
+  const selectedCatalogName = allCatalogs.find((catalog: ContextCatalog) => catalog.name === selectedCatalog)?.name || "No Tables"
+  const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
 
+  const tableDiff = useSelector((state: RootState) => state.settings.tableDiff)
 
-  
+  const relevantTables = toolContext.relevantTables || []
+  const dbInfo = toolContext.dbInfo
+
+  const allTables = dbInfo.tables || []
+  const validAddedTables = applyTableDiffs('', allTables, tableDiff, dbInfo.id)
+  const [isChanged, setIsChanged] = React.useState(false) 
+
+  useEffect(() => {
+    if (!isEmpty(relevantTables)) {
+      if (isEmpty(validAddedTables) && !isChanged) {
+        resetRelevantTables(relevantTables.map(table => ({
+          name: table.name,
+          schema: table.schema,
+          dbId: dbInfo.id
+        })), dbInfo.id)
+      }
+      setIsChanged(true)
+    }
+  }, [validAddedTables])
 
   const debouncedSetInstruction = useCallback(
     _.debounce((instructions) => dispatch(setTaskInstructions(instructions)), 500),
@@ -116,13 +137,10 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     startSelection(async (coords) => {
       const nodes = coords ? uiSelection.getSelectedNodes() : []
       uiSelection.end()
-      console.log('Coords are', coords)
       // if (nodes.length >= 0 && coords) {
       if (coords) {
-        console.log('Nodes are', nodes, coords)
         try {
           const {url, width, height} = await capture(coords)
-          console.log('URL, width, height', url, width, height)
           const context : ImageContext = {
             text: ""
           }
@@ -158,12 +176,12 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         toastDescription = "Please enter a valid message/question"
         preventRunTask = true
     }
-    else if (selectedCatalog === '') {
-        toastTitle = 'No Catalog'
-        toastDescription = "No catalog in context. Please select a valid catalog"
+    else if (isUndefined(get(toolContext, 'dbId'))) {
+        toastTitle = 'No database selected'
+        toastDescription = "Please select a database"
         preventRunTask = true
     }
-    else if (selectedCatalog === "tables" && defaultTableCatalog.content.tables.length === 0){
+    else if (selectedCatalog === DEFAULT_TABLES && isEmpty(validAddedTables)) {
         toastTitle = 'No Table in Default Tables'
         toastDescription = "Please select at least one table in Default Tables catalog"
         preventRunTask = true

@@ -4,7 +4,7 @@ import { CatalogEditor } from '../common/CatalogEditor';
 import { refreshMemberships, YAMLCatalog } from '../common/YAMLCatalog';
 import { getApp } from '../../helpers/app';
 import { Text, Badge, Select, Spacer, Box, Button, HStack, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, useDisclosure, IconButton, Link} from "@chakra-ui/react";
-import { setSelectedCatalog } from "../../state/settings/reducer";
+import { ContextCatalog, DEFAULT_TABLES, setSelectedCatalog } from "../../state/settings/reducer";
 import { dispatch, } from '../../state/dispatch';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
@@ -19,15 +19,16 @@ const useAppStore = getApp().useStore()
 
 const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: () => void}) => {
     const [isCreatingCatalog, setIsCreatingCatalog] = useState(false);
-    const selectedCatalog = useSelector((state: RootState) => state.settings.selectedCatalog)
-    const availableCatalogs = useSelector((state: RootState) => state.settings.availableCatalogs)
-    const selectedCatalogIsValid = availableCatalogs.some((catalog) => catalog.value === selectedCatalog) || selectedCatalog === "tables"
+    const selectedCatalog: string = useSelector((state: RootState) => state.settings.selectedCatalog)
+    const availableCatalogs: ContextCatalog[] = useSelector((state: RootState) => state.settings.availableCatalogs)
+    const selectedCatalogIsValid = availableCatalogs.some((catalog) => catalog.name === selectedCatalog) || selectedCatalog === DEFAULT_TABLES
     const defaultTableCatalog = useSelector((state: RootState) => state.settings.defaultTableCatalog)
     const currentUserId = useSelector((state: RootState) => state.auth.profile_id)
 
     useEffect(() => {
         refreshMemberships(currentUserId)
     }, [])
+    console.log('Selected catalog is', selectedCatalog)
 
     return (
         <>
@@ -62,17 +63,17 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
           <CatalogEditor onCancel={() => setIsCreatingCatalog(false)} />
         ) : (
           <>
-            <Select placeholder="Select a catalog" mt={2} colorScheme="minusxGreen" value={selectedCatalog} onChange={(e) => {dispatch(setSelectedCatalog(e.target.value))}}>
+            <Select mt={2} colorScheme="minusxGreen" value={selectedCatalog} onChange={(e) => {dispatch(setSelectedCatalog(e.target.value))}}>
                 {
-                    [...availableCatalogs, defaultTableCatalog].map((context: any) => {
-                        return <option key={context.value} value={context.value}>{context.name}</option>
+                    [...availableCatalogs, defaultTableCatalog].map((context: ContextCatalog) => {
+                        return <option key={context.name} value={context.name}>{context.name}</option>
                     })
                 }
             </Select>
             <Spacer height={5}/>
             {
                 selectedCatalogIsValid ? (
-                    selectedCatalog === "tables" ? <TablesCatalog /> : <YAMLCatalog />
+                    selectedCatalog === DEFAULT_TABLES ? <TablesCatalog /> : <YAMLCatalog />
                 ) : (
                     <Text fontSize="sm" color="gray.500">No catalog selected</Text>
                 )
@@ -89,8 +90,11 @@ export const Context: React.FC = () => {
     const tool = getParsedIframeInfo().tool
     const dbInfo = toolContext.dbInfo
     const { isOpen, onOpen: modalOpen, onClose: modalClose } = useDisclosure()
-    if (tool != 'metabase' || isEmpty(toolContext)) {
-      return <Text>Coming soon!</Text>
+    if (tool != 'metabase') {
+        return <Text>Coming soon!</Text>
+    }
+    if (isEmpty(toolContext)) {
+        return <Text>Database context is empty</Text>
     }
 
     return <>

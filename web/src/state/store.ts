@@ -2,7 +2,7 @@ import { Action, combineReducers, configureStore, createListenerMiddleware } fro
 import chat, { initialUserConfirmationState, initialTasks } from './chat/reducer'
 import auth from './auth/reducer'
 import thumbnails from './thumbnails/reducer'
-import settings from './settings/reducer'
+import settings, { ContextCatalog, DEFAULT_TABLES } from './settings/reducer'
 import storage from 'redux-persist/lib/storage'
 import { persistReducer, createMigrate } from 'redux-persist'
 import logger from 'redux-logger'
@@ -223,50 +223,61 @@ const migrations = {
     }
     return newState
   },
-    20: (state: any) => {
-        let newState = {...state}
-        newState.settings.selectedCatalog = 'tables'
-        newState.settings.availableCatalogs = [{
-            name: 'Default Tables',
-            value: 'tables'
-        }]
-        return newState
-    },
-    21: (state: any) => {
-        let newState = {...state}
-        newState.settings.selectedCatalog = ''
-        newState.settings.availableCatalogs = []
-        newState.settings.defaultTableCatalog = {
-            name: 'Default Tables',
-            value: 'tables',
-            content: {},
-            dbName: ''
-        }
-        return newState
-    },
-    22: (state: any) => {
-        let newState = {...state}
-        newState.chat.threads.forEach((thread: any) => {
-            thread.tasks = initialTasks
-        })
-        return newState
-    },
-    23: (state: any) => {
+  20: (state: any) => {
       let newState = {...state}
-      newState.settings.availableCatalogs.forEach((catalog: any) => {
-        catalog.allowWrite = true
-      })
-      newState.settings.defaultTableCatalog.allowWrite = true
-      newState.settings.users = {}
-      newState.settings.groups = {}
-      newState.settings.groupsEnabled = false
+      newState.settings.selectedCatalog = 'tables'
+      newState.settings.availableCatalogs = [{
+          name: DEFAULT_TABLES,
+          value: 'tables'
+      }]
       return newState
+  },
+  21: (state: any) => {
+      let newState = {...state}
+      newState.settings.selectedCatalog = ''
+      newState.settings.availableCatalogs = []
+      newState.settings.defaultTableCatalog = {
+          name: DEFAULT_TABLES,
+          value: 'tables',
+          content: {},
+          dbName: ''
+      }
+      return newState
+  },
+  22: (state: any) => {
+      let newState = {...state}
+      newState.chat.threads.forEach((thread: any) => {
+          thread.tasks = initialTasks
+      })
+      return newState
+  },
+  23: (state: any) => {
+    let newState = {...state}
+    newState.settings.availableCatalogs.forEach((catalog: any) => {
+      catalog.allowWrite = true
+    })
+    newState.settings.defaultTableCatalog.allowWrite = true
+    newState.settings.users = {}
+    newState.settings.groups = {}
+    newState.settings.groupsEnabled = false
+    return newState
+  },
+  24: (state: any) => {
+    let newState = {...state}
+    const selectedCatalog = newState.selectedCatalog
+    if (selectedCatalog == '' || selectedCatalog == 'tables') {
+      newState.selectedCatalog = DEFAULT_TABLES
     }
+    if (!newState.availableCatalogs.some((catalog: ContextCatalog) => catalog.name == selectedCatalog)) {
+      newState.selectedCatalog = DEFAULT_TABLES
+    }
+    return newState
+  }
 }
 
 const persistConfig = {
   key: 'root',
-  version: 23,
+  version: 24,
   storage,
   blacklist: ['billing'],
   migrate: createMigrate(migrations, { debug: false }),
@@ -306,6 +317,7 @@ window.__DISPATCH__ = (action: Action) => {
 }
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>
+// export type RootState = ReturnType<typeof store.getState>
+export type RootState = ReturnType<typeof rootReducer>
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch

@@ -8,6 +8,8 @@ export type AppMode = 'sidePanel' | 'selection'
 export type SidePanelTabName = 'chat' | 'settings' | 'context'
 export type DevToolsTabName = 'Context' | 'Action History' | 'Prompts' | 'Available Actions' | 'Planner Configs' | 'Context History' | 'Testing Tools' | 'Custom Instructions' | 'General Settings' | 'Data Catalog' | 'Dev Context'
 
+export const DEFAULT_TABLES = 'Default Tables'
+
 const safeJSON = (text: string) => {
   try {
     return JSON.parse(text);
@@ -30,7 +32,6 @@ export interface TableDiff {
 export interface ContextCatalog {
   id: string
   name: string
-  value: string
   content: any
   dbName: string
   allowWrite: boolean
@@ -126,12 +127,11 @@ const initialState: Settings = {
     remove: []
   },
   drMode: false,
-  selectedCatalog: '',
+  selectedCatalog: DEFAULT_TABLES,
   availableCatalogs: [],
   defaultTableCatalog: {
     id: 'default',
-    name: 'Default Tables',
-    value: 'tables',
+    name: DEFAULT_TABLES,
     content: {},
     dbName: '',
     allowWrite: true
@@ -190,6 +190,16 @@ export const settingsSlice = createSlice({
     setSavedQueries: (state, action: PayloadAction<boolean>) => {
       state.savedQueries = action.payload
     },
+    resetDefaultTablesDB(state, action: PayloadAction<{dbId: Number}>) {
+      state.tableDiff.add = state.tableDiff.add.filter((t) => t.dbId != action.payload.dbId)
+      state.defaultTableCatalog.content = {
+        "tables": state.tableDiff.add.map((t) => {
+            return {
+                name: t.name
+            }
+        })
+      }
+    },
     applyTableDiff(state, action: PayloadAction<{actionType: keyof TableDiff, tables: TableInfo[]}>) {
       const {actionType, tables} = action.payload
       for (const table of tables) {
@@ -218,19 +228,16 @@ export const settingsSlice = createSlice({
       state.selectedCatalog = action.payload
     },
     saveCatalog: (state, action: PayloadAction<Omit<ContextCatalog, 'allowWrite'> & { currentUserId: string }>) => {
-        const { id, name, value, content, dbName, currentUserId } = action.payload
-        const existingCatalog = state.availableCatalogs.find(catalog => catalog.value === value)
+        const { id, name,content, dbName, currentUserId } = action.payload
+        const existingCatalog = state.availableCatalogs.find(catalog => catalog.name === name)
         if (existingCatalog) {
             existingCatalog.content = content
             existingCatalog.dbName = dbName
             existingCatalog.owner = currentUserId
             existingCatalog.allowWrite = true
         } else {
-            state.availableCatalogs.push({ id, name, value, content, dbName, allowWrite: true, owner: currentUserId })
+            state.availableCatalogs.push({ id, name, content, dbName, allowWrite: true, owner: currentUserId })
         }
-    },
-    setCatalogs: (state, action: PayloadAction<ContextCatalog[]>) => {
-        state.availableCatalogs = action.payload
     },
     setMemberships: (state, action: PayloadAction<SetMembershipsPayload>) => {
       const { groups, assets, members, currentUserId } = action.payload
@@ -244,7 +251,6 @@ export const settingsSlice = createSlice({
         return {
           id: asset.id,
           name: asset.name,
-          value: asset.name,
           content: parsedContents.content || "",
           dbName: parsedContents.dbName || "",
           allowWrite: asset.owner === currentUserId,
@@ -284,9 +290,9 @@ export const settingsSlice = createSlice({
       })
     },
     deleteCatalog: (state, action: PayloadAction<string>) => {
-        const catalogToDelete = state.availableCatalogs.find(catalog => catalog.value === action.payload)
+        const catalogToDelete = state.availableCatalogs.find(catalog => catalog.name === action.payload)
         if (catalogToDelete) {
-            state.availableCatalogs = state.availableCatalogs.filter(catalog => catalog.value !== action.payload)
+            state.availableCatalogs = state.availableCatalogs.filter(catalog => catalog.name !== action.payload)
             if (state.selectedCatalog === action.payload) {
                 state.selectedCatalog = ''
             }
@@ -300,7 +306,8 @@ export const { updateIsLocal, updateUploadLogs,
   updateIsAppOpen, updateAppMode, updateIsDevToolsOpen,
   updateSidePanelTabName, updateDevToolsTabName, setSuggestQueries,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules, setSavedQueries,
-  applyTableDiff, setDRMode, setSelectedCatalog, saveCatalog, deleteCatalog, setCatalogs, setMemberships, setGroupsEnabled
+  applyTableDiff, setDRMode, setSelectedCatalog, saveCatalog, deleteCatalog, setMemberships,
+  setGroupsEnabled, resetDefaultTablesDB
 } = settingsSlice.actions
 
 export default settingsSlice.reducer
