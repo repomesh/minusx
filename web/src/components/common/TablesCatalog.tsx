@@ -3,7 +3,7 @@ import { FilteredTable } from './FilterableTable';
 import { MetabaseContext } from 'apps/types';
 import { getApp } from '../../helpers/app';
 import { Text, Link, HStack, Button} from "@chakra-ui/react";
-import { applyTableDiff, TableInfo, setSelectedCatalog, resetDefaultTablesDB } from "../../state/settings/reducer";
+import { applyTableDiff, TableInfo, resetDefaultTablesDB } from "../../state/settings/reducer";
 import { dispatch, } from '../../state/dispatch';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';

@@ -227,7 +227,10 @@ export const settingsSlice = createSlice({
       state.drMode = action.payload
     },
     setSelectedCatalog: (state, action: PayloadAction<string>) => {
-      state.selectedCatalog = action.payload
+      const newSelectedCatalog = action.payload
+      if (newSelectedCatalog == DEFAULT_TABLES || state.availableCatalogs.some(catalog => catalog.name == newSelectedCatalog)) {
+        state.selectedCatalog = action.payload
+      }
     },
     saveCatalog: (state, action: PayloadAction<Omit<ContextCatalog, 'allowWrite'> & { currentUserId: string }>) => {
         const { type, id, name, content, dbName, currentUserId } = action.payload

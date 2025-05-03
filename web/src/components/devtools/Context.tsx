@@ -28,7 +28,6 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
     const [isCreatingDashboardToCatalog, setIsCreatingDashboardToCatalog] = useState(false);
     const selectedCatalog: string = useSelector((state: RootState) => state.settings.selectedCatalog)
     const availableCatalogs: ContextCatalog[] = useSelector((state: RootState) => state.settings.availableCatalogs)
-    const selectedCatalogIsValid = availableCatalogs.some((catalog) => catalog.name === selectedCatalog) || selectedCatalog === DEFAULT_TABLES
     const defaultTableCatalog = useSelector((state: RootState) => state.settings.defaultTableCatalog)
     const currentUserId = useSelector((state: RootState) => state.auth.profile_id)
     const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
@@ -36,7 +35,6 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
     useEffect(() => {
         refreshMemberships(currentUserId)
     }, [])
-    console.log('Selected catalog is', selectedCatalog)
 
     const dbToCatalog = async () => {
         setIsCreatingDashboardToCatalog(true)
@@ -138,11 +136,7 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
             </Select>
             <Spacer height={5}/>
             {
-                selectedCatalogIsValid ? (
-                    selectedCatalog === DEFAULT_TABLES ? <TablesCatalog /> : <YAMLCatalog />
-                ) : (
-                    <Text fontSize="sm" color="gray.500">No catalog selected</Text>
-                )
+                selectedCatalog === DEFAULT_TABLES ? <TablesCatalog /> : <YAMLCatalog />
             }
           </>
         )}
