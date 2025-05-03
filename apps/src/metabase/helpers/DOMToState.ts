@@ -1,7 +1,7 @@
 import { RPCs } from 'web'
 import { getRelevantTablesForSelectedDb, getDatabaseInfoForSelectedDb, extractTableInfo, memoizedGetDatabases, memoizedGetDatabaseTablesWithoutFields, extractDbInfo, getTablesWithFields } from './getDatabaseSchema';
 import { getAndFormatOutputTable, getSqlErrorMessage } from './operations';
-import { isDashboardPage } from './dashboard/util';
+import { isDashboardPageUrl } from './dashboard/util';
 import { DashboardInfo } from './dashboard/types';
 import { getDashboardAppState } from './dashboard/appState';
 import { visualizationSettings, Card, ParameterValues, FormattedTable } from './types';
@@ -32,6 +32,7 @@ interface ExtractedTable {
 
 
 export interface MetabaseAppStateSQLEditor {
+  type: 'metabaseSQLEditor'
   availableDatabases?: string[];
   selectedDatabaseInfo?: ExtractedDataBase;
   relevantTables: ExtractedTable[];
@@ -54,9 +55,12 @@ export interface MetabaseAppStateSQLEditor {
 }
 
 // make this DashboardInfo
-export interface MetabaseAppStateDashboard extends DashboardInfo {}
+export interface MetabaseAppStateDashboard extends DashboardInfo {
+  type: 'metabaseDashboard'
+}
 
 export interface MetabaseSemanticQueryAppState {
+  type: 'metabaseSemanticQuery'
   availableMeasures: Measure[];
   availableDimensions: Dimension[];
   currentSemanticQuery: SemanticQuery;
@@ -156,6 +160,7 @@ export async function convertDOMtoStateSQLQuery() {
   const visualizationSettings = await getMetabaseState('qb.card.visualization_settings') as visualizationSettings
   const sqlVariables = await getSqlVariables();
   const metabaseAppStateSQLEditor: MetabaseAppStateSQLEditor = {
+    type: 'metabaseSQLEditor',
     availableDatabases,
     selectedDatabaseInfo,
     relevantTables: relevantTablesWithFields,
@@ -190,6 +195,7 @@ export async function semanticQueryState() {
   const outputTableMarkdown = await getAndFormatOutputTable();
   
   const metabaseSemanticQueryAppState: MetabaseSemanticQueryAppState = {
+    type: 'metabaseSemanticQuery',
     availableMeasures,
     availableDimensions,
     currentSemanticQuery: semanticQuery,
@@ -200,9 +206,13 @@ export async function semanticQueryState() {
   return metabaseSemanticQueryAppState;
 }
 
-export async function convertDOMtoState() {
+export async function isDashboardPage() {
   const url = await queryURL();
-  if (isDashboardPage(url)) {
+  return isDashboardPageUrl(url);
+}
+
+export async function convertDOMtoState() {
+  if (await isDashboardPage()) {
     return await convertDOMtoStateDashboard();
   }
   const appSettings = RPCs.getAppSettings()

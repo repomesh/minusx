@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react"
 import { TablesCatalog } from '../common/TablesCatalog';
-import { CatalogEditor } from '../common/CatalogEditor';
+import { CatalogEditor, createCatalog, updateCatalog } from '../common/CatalogEditor';
 import { refreshMemberships, YAMLCatalog } from '../common/YAMLCatalog';
 import { getApp } from '../../helpers/app';
-import { Text, Badge, Select, Spacer, Box, Button, HStack, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, useDisclosure, IconButton, Link} from "@chakra-ui/react";
-import { ContextCatalog, DEFAULT_TABLES, setSelectedCatalog } from "../../state/settings/reducer";
+import { Text, Badge, Select, Spacer, Box, Button, HStack, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, useDisclosure, IconButton, Link, Spinner} from "@chakra-ui/react";
+import { ContextCatalog, DEFAULT_TABLES, setSelectedCatalog, saveCatalog } from "../../state/settings/reducer";
 import { dispatch, } from '../../state/dispatch';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { getParsedIframeInfo } from "../../helpers/origin"
-import { isEmpty } from 'lodash';
+import { isEmpty, set } from 'lodash';
 import { MetabaseContext } from 'apps/types';
 import { BiBook, BiExpand } from "react-icons/bi";
+import { BsMagic } from "react-icons/bs";
+import { MetabaseAppState, MetabaseAppStateDashboard } from "../../../../apps/src/metabase/helpers/DOMToState";
+import { getModelFromDashboard } from "./DashboardModelling";
+import { getDashboardPrimaryDbId } from "../../../../apps/src/metabase/helpers/dashboard/util";
+import { load } from 'js-yaml';
+import { DatabaseInfoWithTables, memoizedGetDatabaseInfo } from "../../../../apps/src/metabase/helpers/getDatabaseSchema";
 
 
 
@@ -19,16 +25,54 @@ const useAppStore = getApp().useStore()
 
 const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: () => void}) => {
     const [isCreatingCatalog, setIsCreatingCatalog] = useState(false);
+    const [isCreatingDashboardToCatalog, setIsCreatingDashboardToCatalog] = useState(false);
     const selectedCatalog: string = useSelector((state: RootState) => state.settings.selectedCatalog)
     const availableCatalogs: ContextCatalog[] = useSelector((state: RootState) => state.settings.availableCatalogs)
     const selectedCatalogIsValid = availableCatalogs.some((catalog) => catalog.name === selectedCatalog) || selectedCatalog === DEFAULT_TABLES
     const defaultTableCatalog = useSelector((state: RootState) => state.settings.defaultTableCatalog)
     const currentUserId = useSelector((state: RootState) => state.auth.profile_id)
-
+    const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
+    
     useEffect(() => {
         refreshMemberships(currentUserId)
     }, [])
     console.log('Selected catalog is', selectedCatalog)
+
+    const dbToCatalog = async () => {
+        setIsCreatingDashboardToCatalog(true)
+        const appState = await getApp().getState() as MetabaseAppStateDashboard
+        getModelFromDashboard(appState).then(async dashboardYaml => {
+            const name = appState.id + '-' + appState.name
+            const dbId = toolContext.dbId
+            const dbInfo = toolContext.dbInfo
+            const contents = JSON.stringify({
+                content: load(dashboardYaml),
+                dbName: dbInfo.name,
+                dbId,
+                dbDialect: dbInfo.dialect
+            })
+            const saveAndSelectCatalog = (catalogID: string) => {
+                dispatch(saveCatalog({
+                    type: 'aiGenerated',
+                    id: catalogID,
+                    name,
+                    content: dashboardYaml,
+                    dbName: dbInfo.name,
+                    currentUserId
+                }))
+                dispatch(setSelectedCatalog(name))
+                setIsCreatingDashboardToCatalog(false)
+            }
+            const existingCatalog = availableCatalogs.find(catalog => catalog.name == name)
+            if (existingCatalog) {
+                return updateCatalog({id: existingCatalog.id, name, contents}).then(saveAndSelectCatalog)
+            }
+            return createCatalog({name, contents}).then(saveAndSelectCatalog)
+        })
+        .catch(err => {
+            setIsCreatingDashboardToCatalog(false)
+        })
+    }
 
     return (
         <>
@@ -36,11 +80,32 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
             <Text fontSize="lg" fontWeight="bold">Available Catalogs</Text>
             
             <HStack spacing={0}>
+            {
+                isCreatingDashboardToCatalog ? 
+              <Spinner size="xs" speed="0.8s" thickness="2px" color="blue.500" title="Running" mr={2}/>
+              : 
+              ""
+
+            }
+            {
+                toolContext.pageType == 'dashboard' ? 
+              <Button 
+                size={"xs"} 
+                onClick={dbToCatalog} 
+                colorScheme="minusxGreen"
+                isDisabled={isCreatingDashboardToCatalog || isCreatingCatalog}
+                leftIcon={<BsMagic/>}
+                mr={2}
+              >
+                DB to Catalog
+              </Button> : ''
+            }
+            
             <Button 
               size={"xs"} 
               onClick={() => setIsCreatingCatalog(true)} 
               colorScheme="minusxGreen"
-              isDisabled={isCreatingCatalog}
+              isDisabled={isCreatingCatalog || isCreatingDashboardToCatalog}
               leftIcon={<BiBook />}
             >
               Create Catalog

@@ -31,12 +31,12 @@ export const makeCatalogAPICall = async (endpoint: string, data: object, baseURL
     return response.data;
 }
 
-const createCatalog = async ({ name, contents }: { name: string; contents: string }) => {
+export const createCatalog = async ({ name, contents }: { name: string; contents: string }) => {
     const {id}: {id: string} = await makeCatalogAPICall('', {name, contents, type: 'catalog'})
     return id
 }
 
-const updateCatalog = async ({ id, name, contents }: { id: string; name: string; contents: string }) => {
+export const updateCatalog = async ({ id, name, contents }: { id: string; name: string; contents: string }) => {
     const {id: newId}: {id: string} = await makeCatalogAPICall('', {name, contents, type: 'catalog', id})
     return newId
 }
@@ -77,7 +77,7 @@ export const CatalogEditor: React.FC<CatalogEditorProps> = ({ onCancel, defaultT
                     })
                 })
                 setIsSaving(false);
-                dispatch(saveCatalog({ id: catalogID, name: title, content, dbName: dbName, currentUserId }));
+                dispatch(saveCatalog({ type: 'manual', id: catalogID, name: title, content, dbName: dbName, currentUserId }));
             }
             dispatch(setSelectedCatalog(title))
         } catch(err) {
