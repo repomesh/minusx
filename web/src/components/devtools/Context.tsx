@@ -70,6 +70,7 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
             return createCatalog({name, contents}).then(saveAndSelectCatalog)
         })
         .catch(err => {
+            console.error('Error when generating model from dashboard', err)
             setIsCreatingDashboardToCatalog(false)
         })
     }
