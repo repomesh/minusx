@@ -34,7 +34,7 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
       });
       runStoreTasks(async () => {
         const pageType = isDashboardPageUrl(url) ? 'dashboard' : 'sql';
-        const dbId = pageType == 'dashboard' ? getDashboardPrimaryDbId(await getDashboardAppState()) : await getSelectedDbId();
+        const dbId = await getSelectedDbId();
         const currentToolContext = this.useStore().getState().toolContext
         const oldDbId = get(currentToolContext, 'dbId')
         const oldPageType = get(currentToolContext, 'pageType')
@@ -153,7 +153,6 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
 }
 
 function shouldEnable(elements: DOMQueryMapResponse, url: string) {
-  const appSettings = RPCs.getAppSettings()
   const hash = btoa(JSON.stringify({
         "dataset_query": {
             "database": null,
@@ -171,18 +170,10 @@ function shouldEnable(elements: DOMQueryMapResponse, url: string) {
   const SQLQueryURL = new URL(url).origin + '/question#' + hash;
   const reason = `To enable MinusX on Metabase, head over to the SQL query [page](${SQLQueryURL})!`
   if (isDashboardPageUrl(url)) {
-    if (appSettings.drMode) {
-        return {
-        value: true,
-        reason: "",
-        };
-    }
-    else{
-        return {
-            value: false,
-            reason: reason,
-        };
-    }
+    return {
+      value: true,
+      reason: "",
+    };
   }
   if (isEmpty(elements.editor)) {
     return {
