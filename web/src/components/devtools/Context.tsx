@@ -29,6 +29,11 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
     const defaultTableCatalog = useSelector((state: RootState) => state.settings.defaultTableCatalog)
     const currentUserId = useSelector((state: RootState) => state.auth.profile_id)
     const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
+    const viewAllCatalogs = useSelector((state: RootState) => state.settings.viewAllCatalogs)
+    const origin = getParsedIframeInfo().origin
+    // Enable to limit catalog visibility
+    // const visibleCatalogs = viewAllCatalogs ? availableCatalogs : availableCatalogs.filter((catalog: ContextCatalog) => !catalog.origin || catalog.origin === origin)
+    const visibleCatalogs = availableCatalogs
     
     useEffect(() => {
         refreshMemberships(currentUserId)
@@ -63,6 +68,7 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
                     name,
                     content: dashboardYaml,
                     dbName: dbInfo.name,
+                    origin,
                     currentUserId
                 }))
                 dispatch(setSelectedCatalog(name))
@@ -132,7 +138,7 @@ const CatalogDisplay = ({isInModal, modalOpen}: {isInModal: boolean, modalOpen: 
           <>
             <Select mt={2} colorScheme="minusxGreen" value={selectedCatalog} onChange={(e) => {dispatch(setSelectedCatalog(e.target.value))}}>
                 {
-                    [...availableCatalogs, defaultTableCatalog].map((context: ContextCatalog) => {
+                    [...visibleCatalogs, defaultTableCatalog].map((context: ContextCatalog) => {
                         return <option key={context.name} value={context.name}>{context.name}</option>
                     })
                 }

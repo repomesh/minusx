@@ -35,6 +35,7 @@ export interface ContextCatalog {
   name: string
   content: any
   dbName: string
+  origin: string
   allowWrite: boolean
   primaryGroup?: string
   owner?: string
@@ -106,6 +107,7 @@ interface Settings {
   groups: Record<string, UserGroup>
   groupsEnabled: boolean
   snippetsMode: boolean
+  viewAllCatalogs: boolean
 }
 
 const initialState: Settings = {
@@ -137,12 +139,14 @@ const initialState: Settings = {
     name: DEFAULT_TABLES,
     content: {},
     dbName: '',
+    origin: '',
     allowWrite: true
   },
   users: {},
   groups: {},
   groupsEnabled: false,
-  snippetsMode: false
+  snippetsMode: false,
+  viewAllCatalogs: false
 }
 
 export const settingsSlice = createSlice({
@@ -187,6 +191,9 @@ export const settingsSlice = createSlice({
     },
     setSnippetsMode: (state, action: PayloadAction<boolean>) => {
       state.snippetsMode = action.payload
+    },
+    setViewAllCatalogs: (state, action: PayloadAction<boolean>) => {
+      state.viewAllCatalogs = action.payload
     },
     setAppRecording: (state, action: PayloadAction<boolean>) => {
       state.isRecording = action.payload
@@ -238,7 +245,7 @@ export const settingsSlice = createSlice({
       }
     },
     saveCatalog: (state, action: PayloadAction<Omit<ContextCatalog, 'allowWrite'> & { currentUserId: string }>) => {
-        const { type, id, name, content, dbName, currentUserId } = action.payload
+        const { type, id, name, content, dbName, origin, currentUserId } = action.payload
         const existingCatalog = state.availableCatalogs.find(catalog => catalog.id === id)
         if (existingCatalog) {
           if (state.selectedCatalog == existingCatalog.name) {
@@ -247,10 +254,11 @@ export const settingsSlice = createSlice({
           existingCatalog.name = name
           existingCatalog.content = content
           existingCatalog.dbName = dbName
+          existingCatalog.origin = origin
           existingCatalog.owner = currentUserId
           existingCatalog.allowWrite = true
         } else {
-          state.availableCatalogs.push({ type, id, name, content, dbName, allowWrite: true, owner: currentUserId })
+          state.availableCatalogs.push({ type, id, name, content, dbName, origin, allowWrite: true, owner: currentUserId })
         }
     },
     setMemberships: (state, action: PayloadAction<SetMembershipsPayload>) => {
@@ -268,6 +276,7 @@ export const settingsSlice = createSlice({
           name: asset.name,
           content: parsedContents.content || "",
           dbName: parsedContents.dbName || "",
+          origin: parsedContents.origin || "",
           allowWrite: asset.owner === currentUserId,
           owner: asset.owner,
           primaryGroup: groups.find(g =>
@@ -325,7 +334,7 @@ export const { updateIsLocal, updateUploadLogs,
   updateSidePanelTabName, updateDevToolsTabName, setSuggestQueries,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules, setSavedQueries,
   applyTableDiff, setDRMode, setSelectedCatalog, saveCatalog, deleteCatalog, setMemberships,
-  setGroupsEnabled, resetDefaultTablesDB, setSnippetsMode
+  setGroupsEnabled, resetDefaultTablesDB, setSnippetsMode, setViewAllCatalogs
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

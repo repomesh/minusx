@@ -10,6 +10,7 @@ import { configs } from "../../constants";
 import { useSelector } from "react-redux";
 import { RootState } from "../../state/store";
 import { toast } from "../../app/toast";
+import { getParsedIframeInfo } from "../../helpers/origin";
 
 const useAppStore = getApp().useStore()
 
@@ -43,6 +44,7 @@ export const updateCatalog = async ({ id, name, contents }: { id: string; name: 
 
 export const CatalogEditor: React.FC<CatalogEditorProps> = ({ onCancel, defaultTitle = '', defaultContent = '', id = '' }) => {
     const catalog: ContextCatalog = useSelector((state: RootState) => state.settings.availableCatalogs.find(catalog => catalog.id === id))
+    const origin = getParsedIframeInfo().origin
     if (catalog) {
         defaultTitle = catalog.name
         defaultContent = catalog.content
@@ -71,13 +73,14 @@ export const CatalogEditor: React.FC<CatalogEditorProps> = ({ onCancel, defaultT
                     name: title,
                     contents: JSON.stringify({
                         content,
-                        dbName: dbName,
+                        dbName,
                         dbId: dbId,
-                        dbDialect: dbDialect
+                        dbDialect: dbDialect,
+                        origin
                     })
                 })
                 setIsSaving(false);
-                dispatch(saveCatalog({ type: 'manual', id: catalogID, name: title, content, dbName: dbName, currentUserId }));
+                dispatch(saveCatalog({ type: 'manual', id: catalogID, name: title, content, dbName, origin, currentUserId }));
             }
             dispatch(setSelectedCatalog(title))
         } catch(err) {
