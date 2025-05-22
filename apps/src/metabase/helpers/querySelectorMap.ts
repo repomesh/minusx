@@ -62,6 +62,10 @@ export const querySelectorMap: QuerySelectorMap = {
     // selector: "//div[@data-testid='fixed-width-dashboard-header']/div[@role='heading']"
     selector: "//div[contains(@class, 'Header-buttonSection')]"
   },
+  dashcard: {
+    type: 'CSS',
+    selector: "[data-testid='dashcard-container']"
+  },
   selected_database: {
     type: 'XPATH',
     selector: "//*[@data-testid='native-query-top-bar']/div[1]"

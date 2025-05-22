@@ -107,6 +107,10 @@ export const metabaseInternalState: MetabaseInternalState = {
       selector: querySelectorMap["query_editor"],
       attrs: ["class"],
     },
+    dashcard: {
+      selector: querySelectorMap["dashcard"],
+      attrs: ["class"],
+    }
   },
   toolContext: {
     pageType: 'sql',
