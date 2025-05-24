@@ -160,9 +160,9 @@ const AppLoggedIn = forwardRef((_props, ref) => {
     const drMode = useSelector((state: RootState) => state.settings.drMode)
     return (
         <HStack>
-            { !subscribed &&  !drMode && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidLockAlt /> Lite Mode</Link> }
+            { !subscribed && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidLockAlt /> Lite Mode</Link> }
             { subscribed && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidStar /> Pro Mode</Link> }
-            {drMode && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidRocket /> Enterprise Mode</Link> }
+            {/* {drMode && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidRocket /> Enterprise Mode</Link> } */}
         </HStack>
     )
   }
