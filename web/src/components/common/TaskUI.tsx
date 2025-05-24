@@ -180,7 +180,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     }
     else if (toolContext.pageType === 'dashboard' && !drMode) {
         toastTitle = 'Dashboard is supported only in agent mode'
-        toastDescription = "Please switch to agent mode"
+        toastDescription = "You can enable agent mode in settings"
         preventRunTask = true
     }
     else if (selectedCatalog === DEFAULT_TABLES && isEmpty(validAddedTables)) {

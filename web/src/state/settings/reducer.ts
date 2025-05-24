@@ -130,7 +130,7 @@ const initialState: Settings = {
     add: [],
     remove: []
   },
-  drMode: false,
+  drMode: true,
   selectedCatalog: DEFAULT_TABLES,
   availableCatalogs: [],
   defaultTableCatalog: {
