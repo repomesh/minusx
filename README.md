@@ -2,9 +2,7 @@
 <!-- <a href="https://minusx.ai"><img width="600" src="https://raw.githubusercontent.com/minusxai/.github/master/profile/logo_big.png"></a> -->
 <h1>MinusX</h1>
 <p>
-  <b>MinusX is an AI Data Scientist that works on tools you use and love</b>
-  <br>
-  Currently, it can operate <a href="https://minusx.ai/tools/jupyter">Jupyter</a>, <a href="https://minusx.ai/tools/metabase">Metabase</a>, <a href="https://minusx.ai/tools/google-sheets">Google Sheets</a>, and <a href="https://minusx.ai/tools/posthog">Posthog</a> with more tools on the way.
+  <b>MinusX is an AI Analyst that you can add on to your Metabase and helps you reliably answer any business question in plain English.</b>
 </p>
 <h3>
   <a href="https://minusx.ai/chrome-extension">Install Extension</a>
@@ -19,16 +17,14 @@
 </h3>
 
 <div align="center">
-<a href="https://www.youtube.com/watch?v=lcO9XGofW40"><img width="650" src="https://raw.githubusercontent.com/minusxai/.github/master/assets/thumbnail.png"></a>
+<a href="https://youtu.be/gX1OeslCH7s"><img width="650" src="https://raw.githubusercontent.com/minusxai/.github/master/assets/thumbnail3.png"></a>
 </div>
 </div>
 
 ## How does MinusX work?
-MinusX adds a side-chat to your app, and when given an instruction, it operates the app - via clicking and typing - to analyze data and answer queries. It is deeply integrated into the app you use it on. It uses a simplified context of the app, predefined actions, routines and goals to decide the next action. With MinusX, you can broadly do 3 types of tasks:
-- Explore data: Ask for hypotheses and make MinusX work through them.
-- Modify content: Cmd+k / Ctrl+k to invoke MinusX and extend existing jupyter notebooks or metabase/posthog queries
-- Select & Ask: Select a region (screenshot like action) and ask questions
+MinusX adds an AI side-chat to your Metabase. When given an instruction, MinusX uses your business context already inside Metabase to reliably answer questions including your previous queries and (if you ask from a Dashboard page), the current dashboard context.
 
+MinusX also allows you to specify _precisely_ the context that the model sees to ensure reliable answers. This include custom metrics, dimensions, & sub-queries defined in [Data catalogs](https://docs.minusx.ai/en/articles/11165963-data-catalogs).
 
 <div>
   <br>
@@ -42,18 +38,11 @@ MinusX adds a side-chat to your app, and when given an instruction, it operates 
 </div>
 
 
-## Supported Analytics Tools
-<a href="https://minusx.ai/tools/jupyter"><img src="https://minusx.ai/_next/static/media/jupyter.0fedaa2d.svg" width="80" height="80" alt=""/></a>
-<a href="https://minusx.ai/tools/metabase"><img src="https://minusx.ai/_next/static/media/metabase.e2bebbef.svg" width="80" height="80" alt=""/></a>
-<a href="https://minusx.ai/tools/google-sheets"><img src="https://www.gstatic.com/images/branding/product/2x/sheets_2020q4_48dp.png" width="80" height="80" alt=""/></a>
-<a href="https://minusx.ai/tools/posthog"><img src="https://posthog.com/brand/posthog-logomark.svg" width="80" height="80" alt=""/></a>
-
 ---
 
 ## Using MinusX
-- Install the [Chrome extension](https://minusx.ai/chrome-extension) or the [Google Sheets Add-on](https://workspace.google.com/u/0/marketplace/app/minusx/1001122509846)
-- Take MinusX for a spin in our [playground](https://minusx.ai/playground), or in your own Jupyter/Metabase instances / Google Sheets!
-- Don't see your favorite tool in our list? Here’s a [google form](https://minusx.ai/tool-request) you can fill out so that we can notify you when we support your tool!
+- Install the [Chrome extension](https://minusx.ai/chrome-extension)
+- Take MinusX for a spin in our [playground](https://minusx.ai/playground), or in your own Metabase.
 
 ---
 
