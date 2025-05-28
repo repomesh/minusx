@@ -1,4 +1,4 @@
-import { addNativeEventListener, RPCs, configs, renderString } from "web";
+import { addNativeEventListener, RPCs, configs, renderString, getParsedIframeInfo } from "web";
 import { DefaultAppState } from "../base/appState";
 import { MetabaseController } from "./appController";
 import { DB_INFO_DEFAULT, metabaseInternalState } from "./defaultState";
@@ -107,6 +107,19 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
         },
       });
     })
+
+    const loginBoxSelector = querySelectorMap['login_box']
+    const origin = getParsedIframeInfo().origin
+    if (origin.includes('metabase.minusx.ai')) {
+      await RPCs.addNativeElements(loginBoxSelector, {
+        tag: 'pre',
+        attributes: {
+          class: 'Button Button--primary',
+          style: 'background-color: white; color: black; font-size: 15px; border-radius: 5px;',
+        },
+        children: ['Username: player01@minusx.ai', '\n', 'Password: player01']
+      })
+    }
     // const entityMenuSelector = querySelectorMap['dashboard_header']
     // const entityMenuId = await RPCs.addNativeElements(entityMenuSelector, {
     //   tag: 'button',

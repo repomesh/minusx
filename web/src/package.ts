@@ -7,3 +7,4 @@ export { configs } from './constants';
 export { renderString } from './helpers/templatize';
 export { contains } from './helpers/utils';
 export { GLOBAL_EVENTS, captureEvent } from './tracking'
+export { getParsedIframeInfo } from './helpers/origin';

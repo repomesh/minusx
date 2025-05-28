@@ -57,6 +57,10 @@ export const querySelectorMap: QuerySelectorMap = {
     type: 'XPATH',
     selector: '//div[contains(text(), "An error occurred in your query")]'
   },
+  login_box: {
+    type: 'XPATH',
+    selector: '//div[contains(text(), "Sign in to Metabase")]'
+  },
   dashboard_header: {
     type: 'XPATH',
     // selector: "//div[@data-testid='fixed-width-dashboard-header']/div[@role='heading']"
