@@ -1,5 +1,17 @@
 import { get, isEmpty, keyBy, map } from "lodash";
 import { FormattedTable } from "./types";
+import { deterministicSample } from "../../common/utils";
+
+// Helper function to safely extract string value from from_ field
+function getFromString(from_: any): string {
+  if (typeof from_ === 'string') {
+    return from_;
+  }
+  if (typeof from_ === 'object' && from_ !== null) {
+    return get(from_, 'alias', '') || '';
+  }
+  return '';
+}
 
 const createCatalogFromTables = (tables: FormattedTable[]) => {
   return {
@@ -16,10 +28,18 @@ const createCatalogFromTables = (tables: FormattedTable[]) => {
             description: column.description,
           }
           if (!isEmpty(column.unique_values)) {
-            //@ts-ignore
-            newDim.unique_values = column.unique_values
-            //@ts-ignore
-            newDim.has_more_values = column.has_more_values
+            // Limit unique_values to 20 items max with deterministic sampling
+            if (column.unique_values.length > 20) {
+              //@ts-ignore
+              newDim.unique_values = deterministicSample(column.unique_values, 20, `${table.name}.${column.name}`)
+              //@ts-ignore
+              newDim.has_more_values = true
+            } else {
+              //@ts-ignore
+              newDim.unique_values = column.unique_values
+              //@ts-ignore
+              newDim.has_more_values = column.has_more_values
+            }
           }
           return newDim
         })
@@ -41,8 +61,9 @@ function modifyCatalog(catalog: object, tables: FormattedTable[]) {
   const newEntities: object[] = []
   get(catalog, 'entities', []).forEach((entity: object) => {
     const from_ = get(entity, 'from_', '')
+    const fromString = getFromString(from_)
     const fromSchema = get(entity, 'schema', '')
-    const fromRef = fromSchema ? `${fromSchema}.${from_}` : from_;
+    const fromRef = fromSchema ? `${fromSchema}.${fromString}` : fromString;
     const tableEntity = get(tableEntityMap, fromRef, {})
     if (!isEmpty(tableEntity)) {
       get(entity, 'dimensions', []).forEach((dimension: any) => {
@@ -50,8 +71,14 @@ function modifyCatalog(catalog: object, tables: FormattedTable[]) {
           const tableDimension = get(tableEntity, 'dimensions', []).find((dim: any) => dim.name === dimension.name);
           const unique_values = get(tableDimension, 'unique_values', []);
           if (!isEmpty(unique_values)) {
-            dimension.unique_values  = unique_values
-            dimension.has_more_values = get(tableDimension, 'has_more_values', false);
+            // Limit unique_values to 20 items max with deterministic sampling
+            if (unique_values.length > 20) {
+              dimension.unique_values = deterministicSample(unique_values, 20, `${fromString}.${dimension.name}`)
+              dimension.has_more_values = true
+            } else {
+              dimension.unique_values = unique_values
+              dimension.has_more_values = get(tableDimension, 'has_more_values', false);
+            }
           }
         }
       })
