@@ -1,4 +1,4 @@
-import { Checkbox, Button, Input, VStack, Text, Link, HStack, Box, Divider, AbsoluteCenter, Stack, Switch, Textarea, Radio, RadioGroup, IconButton, Icon, Tag, TagLabel } from '@chakra-ui/react';
+import { Checkbox, Button, Input, VStack, Text, Link, HStack, Box, Divider, AbsoluteCenter, Stack, Switch, Textarea, Radio, RadioGroup, IconButton, Icon, Tag, TagLabel, Badge } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { dispatch, logoutState, resetState } from '../../state/dispatch';
 import { updateIsLocal, updateIsDevToolsOpen, updateUploadLogs, updateDevToolsTabName, DevToolsTabName, setConfirmChanges, setDemoMode, setSavedQueries, setDRMode, setGroupsEnabled, setModelsMode, setViewAllCatalogs, setEnableUnique  } from '../../state/settings/reducer';
@@ -67,6 +67,8 @@ const SettingsPage = () => {
   const auth = useSelector((state: RootState) => state.auth)
   const billing = useSelector((state: RootState) => state.billing)
   const tabName = useSelector((state: RootState) => state.settings.devToolsTabName)
+  const thread = useSelector((state: RootState) => state.chat.activeThread)
+  const activeThread = useSelector((state: RootState) => state.chat.threads[thread])
 
   const reloadBillingInfo = async () => {
     await getBillingInfo().then((billingInfo) => {
@@ -243,6 +245,10 @@ const SettingsPage = () => {
           </HStack>
           <IconButton size="sm" colorScheme={"minusxGreen"} variant="ghost" aria-label="See Prompts" icon={<Icon as={BiLinkExternal} boxSize={4} />} onClick={() =>  window.open(discordLink, '_blank')} />
         </HStack>
+        <Stack direction='row' alignItems={"center"} justifyContent={"space-between"}>
+          <Text color={"minusxBW.800"} fontSize="sm">Chat Thread ID</Text>
+          <Badge color={"minusxGreen.600"} size={"xs"}>{activeThread.id}</Badge>
+        </Stack>
       </SettingsBlock>
       <Button size={"sm"} p={2} colorScheme="minusxGreen" onClick={() => logoutState()}>Logout</Button>
     </VStack>
