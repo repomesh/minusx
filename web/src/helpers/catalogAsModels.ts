@@ -1,8 +1,9 @@
-import { get } from "lodash";
+import { get, find } from "lodash";
 import { fetchData } from "../app/rpc";
 import { ContextCatalog, MxModel } from './utils';
 import slugg from "slugg";
 import { getParsedIframeInfo } from "./origin";
+import { getState } from "../state/store";
 
 export type AllSnippetsResponse = {
   name: string;
@@ -297,4 +298,49 @@ export const canUseModelsModeForCatalog = (catalog: ContextCatalog, allMxModels:
     }
   }
   return true
+}
+
+// Add CTEs to SQL query
+export function addCtesToQuery(ctes: [string, string][], sql: string): string {
+  if (ctes.length === 0) {
+    return sql;
+  }
+
+  const pattern = /^\s*(?:--[^\n]*\n\s*)*(WITH)\b/i;
+  const match = sql.match(pattern);
+  const cteClauses = ctes.map(
+    ([name, query]) => `${name} AS (\n${query.trim()}\n)`
+  );
+
+  if (!match) {
+    const cteBlock = "WITH " + cteClauses.join(",\n");
+    return `${cteBlock}\n${sql.trim()}`;
+  } else {
+    const insertAt = match.index! + match[1].length;
+    const injected = " " + cteClauses.join(",\n") + ",";
+    return sql.slice(0, insertAt) + injected + sql.slice(insertAt);
+  }
+}
+
+// Process SQL with either CTEs or Metabase models
+export function processSQLWithCtesOrModels(
+  sql: string,
+  ctes: [string, string][]
+): string {
+  const state = getState();
+  
+  const selectedCatalog = find(state.settings.availableCatalogs, { name: state.settings.selectedCatalog });
+  const modelsMode = state.settings.modelsMode;
+  const mxModels = state.cache.mxModels;
+  
+  if (!modelsMode || (selectedCatalog && !canUseModelsModeForCatalog(selectedCatalog, mxModels))) {
+    sql = addCtesToQuery(ctes, sql);
+  } else {
+    // for entities for which snippets were created, replace entity.name with their snippet identifier
+    if (selectedCatalog) {
+      sql = replaceEntityNamesInSqlWithModels(sql, selectedCatalog, mxModels);
+    }
+  }
+  
+  return sql;
 }
