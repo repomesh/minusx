@@ -43,11 +43,13 @@ MinusX is organized as a yarn workspace monorepo with 3 main packages:
 - **Web**: Redux with RTK, persisted state, separate reducers for auth, chat, settings, etc.
 - **Apps**: Zustand for lightweight state management in app-specific contexts
 - **Extension**: Chrome storage APIs for extension-specific data
+- **Cross-Boundary Pattern**: Apps expose Zustand stores via `useStore()` that web components can subscribe to using `getApp().useStore()`, enabling reactive UI updates without tight coupling
 
 #### Communication Architecture
 - **RPC System**: Bidirectional communication between web app, extension, and content scripts
 - **Message Passing**: Chrome extension APIs for background/content script communication  
 - **Event System**: Custom event dispatching for DOM interactions and state updates
+- **Host Page Monitoring**: Apps use `subscribe()` pattern to listen for DOM changes in the host page (e.g., Metabase), storing state updates in apps-side Zustand stores that web components subscribe to via `getApp().useStore()`
 
 ### Metabase Integration
 - Full SQL query execution and dashboard interaction capabilities
