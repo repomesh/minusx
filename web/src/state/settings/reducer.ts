@@ -128,7 +128,7 @@ const initialState: Settings = {
   users: {},
   groups: {},
   groupsEnabled: false,
-  modelsMode: false,
+  modelsMode: true,
   viewAllCatalogs: false,
   enableUnique: true
 }
