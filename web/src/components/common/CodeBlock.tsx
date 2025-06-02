@@ -52,9 +52,6 @@ function getCombinedCodeAndDiffs(code_new: string, code_old: string | undefined)
     }
   });
 
-  console.log(combinedCode);
-  console.log(diffLineIndices);
-
   return { combinedCode, diffLineIndices};
 }
 
@@ -91,7 +88,7 @@ export const CodeBlock = ({ code, tool, oldCode, language }: { code: string, too
 
       <TabPanels bg={"#1e1e1e"} borderRadius={5} mt={0} maxHeight={"500px"} overflow={"scroll"}>
         <TabPanel p={0}>
-          <SyntaxHighlighter language={language} style={vsd} showLineNumbers={true} wrapLines={true} lineProps={linePropsFn} lineNumberStyle={{display: 'none'}}>
+          <SyntaxHighlighter codeTagProps={{}} language={language} style={vsd} showLineNumbers={true} wrapLines={true} lineProps={linePropsFn} lineNumberStyle={{display: 'none'}}>
             {code}
           </SyntaxHighlighter>
         </TabPanel>
