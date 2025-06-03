@@ -149,6 +149,20 @@ export function getID() {
   return getUniqueString() + '_' + getParsedIframeInfo().r
 }
 
+function generateNextThreadID(currentID: string): string {
+  if (!currentID) {
+    return `v0-${getID()}-0`
+  }
+  
+  try {
+    const splitID = currentID.split('-')
+    const oldIndex = splitID[splitID.length - 1]
+    return splitID.slice(0, -1).join('-') + '-' + (parseInt(oldIndex) + 1)
+  } catch (e) {
+    return `v0-${getID()}-${Date.now()}`
+  }
+}
+
 const initialState: ChatState = {
   threads: [{
     index: 0,
@@ -198,7 +212,8 @@ export const chatSlice = createSlice({
       if (activeThread.status != 'FINISHED') {
         return
       }
-      activeThread.messages = activeThread.messages.splice(0, messageIndex)
+      activeThread.messages = activeThread.messages.slice(0, messageIndex)
+      activeThread.id = generateNextThreadID(activeThread.id)
     },
     addActionPlanMessage: (
       state,
@@ -346,20 +361,8 @@ export const chatSlice = createSlice({
         });
       }
       state.activeThread = state.threads.length
-      let previousID = state.threads[state.threads.length - 1].id
-      let newID = ''
-      if (!previousID) {
-        newID = `v0-${getID()}-0`
-      }
-      else {
-        try {
-          const splitID = previousID.split('-')
-          const oldIndex = splitID[splitID.length - 1]
-          newID = splitID.slice(0, -1).join('-') + '-' + (parseInt(oldIndex) + 1)
-        } catch (e) {
-          newID = `v0-${getID()}-${state.threads.length}`
-        }
-      }
+      const previousID = state.threads[state.threads.length - 1].id
+      const newID = generateNextThreadID(previousID)
       state.threads.push({
         index: state.threads.length,
         messages: [],
