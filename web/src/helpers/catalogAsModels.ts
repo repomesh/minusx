@@ -186,8 +186,10 @@ export const doesEntityRequireModel = (entity: Entity) => {
         return true
       }
     }
+    // split sql table into name and schema
+    const [schema_name, table_name] = entity.sql_table.split('.')
     // check if name matches sql_table; if it doesn't we still need a model
-    if (entity.name != entity.sql_table) {
+    if (entity.name != table_name) {
       return true
     }
     return false
