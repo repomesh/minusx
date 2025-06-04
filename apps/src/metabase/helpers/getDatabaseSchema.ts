@@ -128,7 +128,7 @@ async function getDatabaseTablesWithoutFields(dbId: number): Promise<DatabaseInf
 
   return {
       ...extractDbInfo(jsonResponse, defaultSchema),
-      tables
+      tables: tables || []
   };
 }
 export const memoizedGetDatabaseTablesWithoutFields = memoize(getDatabaseTablesWithoutFields);
