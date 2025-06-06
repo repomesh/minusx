@@ -133,7 +133,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   }
 
   const isMessageTooLong = () => {
-    return JSON.stringify(messages).length / 4 > 50000
+    return messages.length >= 10 && JSON.stringify(messages).length / 4 > 50000
   }
 
   const handleSnapClick = async () => {
@@ -327,7 +327,17 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         { !userConfirmation.show && !(currentTool === "google" && currentToolVersion === "sheets") &&
         <>
           {/* <Divider borderColor={"minusxBW.500"}/> */}
-          {isMessageTooLong() && <Text fontSize="sm" color={"minusxBW.600"}>Long conversations decrease both speed and accuracy. Consider starting a new chat thread (click <BiMessageAdd style={{display:"inline-block", verticalAlign: "middle"}}/> at the top right corner).</Text>}
+          {isMessageTooLong() && <Text fontSize="medium" color={"black"}>Your thread is too long and is reducing your performance & accuracy. Click
+            {" "}<Text
+              as="span"
+              color="blue.500"
+              textDecoration="underline"
+              cursor="pointer"
+              _hover={{ color: "blue.700" }}
+              onClick={clearMessages}
+            >
+              here
+            </Text>{" "} to start a new chat.</Text>}
             {/* <ChatSuggestions
               suggestQueries={suggestQueries}
               toggleSuggestions={toggleSuggestions}
