@@ -19,8 +19,11 @@ export async function getSelectedDbId(): Promise<number | undefined> {
   let dbId;
   if (isDashboard) {
     const dashcards = await getMetabaseState('dashboard.dashcards') as any;
-    const dbIds = Object.values(dashcards).map((d: any) => d.card.database_id);
+    const dbIds = Object.values(dashcards || []).map((d: any) => d.card.database_id);
     dbId = _.chain(dbIds).countBy().toPairs().maxBy(_.last).head().value();
+    try {
+      dbId = parseInt(dbId);
+    } catch (e) {}
   }
   else {
     dbId = await getMetabaseState('qb.card.dataset_query.database')
