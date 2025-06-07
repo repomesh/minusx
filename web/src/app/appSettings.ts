@@ -7,14 +7,12 @@ export const getAppSettings = () => {
   const state: RootState = getState()
   const settings = state.settings
   return {
-    savedQueries: settings.savedQueries,
     semanticPlanner: settings.demoMode,
     tableDiff: settings.tableDiff,
     drMode: settings.drMode,
     selectedCatalog: settings.selectedCatalog,
     availableCatalogs: settings.availableCatalogs,
     modelsMode: settings.modelsMode,
-    enableUnique: settings.enableUnique,
   }
 }
 

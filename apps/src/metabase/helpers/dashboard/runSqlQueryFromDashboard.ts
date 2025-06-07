@@ -1,17 +1,7 @@
-import { fetchData } from "../../../../../web/src/app/rpc";
 import { DashboardInfo, DatasetResponse } from "./types";
-
-
+import { executeQuery } from '../metabaseAPIHelpers';
 
 export const runSQLQueryFromDashboard = async (sql: string, databaseId: number, templateTags = {}) => {
-  const response = await fetchData('/api/dataset', 'POST', {
-      "database": databaseId,
-      "type": "native",
-      "native": {
-        "query": sql,
-        "template-tags": templateTags
-      },
-      "parameters": []
-    }) as DatasetResponse;
+  const response = await executeQuery(sql, databaseId, templateTags) as DatasetResponse;
   return response
 }

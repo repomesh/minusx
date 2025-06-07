@@ -2,17 +2,17 @@ import { addNativeEventListener, RPCs, configs, renderString, getParsedIframeInf
 import { DefaultAppState } from "../base/appState";
 import { MetabaseController } from "./appController";
 import { DB_INFO_DEFAULT, metabaseInternalState } from "./defaultState";
-import { convertDOMtoState, isDashboardPage, MetabaseAppState } from "./helpers/DOMToState";
-import { getDashboardPrimaryDbId, isDashboardPageUrl } from "./helpers/dashboard/util";
+import { convertDOMtoState, MetabaseAppState } from "./helpers/DOMToState";
+import { isDashboardPageUrl } from "./helpers/dashboard/util";
 import { cloneDeep, get, isEmpty, memoize } from "lodash";
 import { DOMQueryMapResponse } from "extension/types";
 import { subscribe, GLOBAL_EVENTS, captureEvent } from "web";
-import { getCleanedTopQueries, getRelevantTablesForSelectedDb, memoizedGetDatabaseTablesWithoutFields, getCardsCountSplitByType, memoizedGetDatabaseInfo } from "./helpers/getDatabaseSchema";
+import { getRelevantTablesForSelectedDb } from "./helpers/getDatabaseSchema";
+import { getDatabaseTablesWithoutFields, getDatabaseInfo } from "./helpers/metabaseAPIHelpers";
 import { querySelectorMap } from "./helpers/querySelectorMap";
-import { getSelectedDbId } from "./helpers/getUserInfo";
+import { getSelectedDbId } from "./helpers/metabaseStateAPI";
 import { abortable, createRunner, handlePromise } from "../common/utils";
-import { getDashboardAppState } from "./helpers/dashboard/appState";
-import { fetchTableData } from "../package";
+import { getTableData } from "../package";
 const runStoreTasks = createRunner()
 const explainSQLTasks = createRunner()
 
@@ -60,7 +60,7 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
           const isCancelled = () => taskStatus.status === 'cancelled';
           const [relevantTables, dbInfo] = await Promise.all([
             handlePromise(abortable(getRelevantTablesForSelectedDb(''), isCancelled), "Failed to get relevant tables", []),
-            handlePromise(abortable(memoizedGetDatabaseTablesWithoutFields(dbId), isCancelled), "Failed to get database info", DB_INFO_DEFAULT)
+            handlePromise(abortable(getDatabaseTablesWithoutFields(dbId), isCancelled), "Failed to get database info", DB_INFO_DEFAULT)
           ])
           state.update((oldState) => ({
             ...oldState,
@@ -72,16 +72,11 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
             }
           }))
           // Perf caching
-          relevantTables.forEach((table) => fetchTableData(table.id, true))
-          memoizedGetDatabaseInfo(dbId)
+          getDatabaseInfo(dbId)
         })
       }
     })
     
-    getCardsCountSplitByType().then(cardsCount => {
-        captureEvent(GLOBAL_EVENTS.metabase_card_count, { cardsCount })
-    });
-
     // Listen to clicks on Error Message
     const errorMessageSelector = querySelectorMap['error_message_head']
     const uniqueID = await RPCs.addNativeElements(errorMessageSelector, {
@@ -199,31 +194,12 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
   }
 
   public async getPlannerConfig() {
-    const url = await RPCs.queryURL();
     const internalState = this.useStore().getState()
-    // Change depending on dashboard or SQL
-    // if (isDashboardPageUrl(url)) {
-    //   return internalState.llmConfigs.dashboard;
-    // }
     const appSettings = RPCs.getAppSettings()
     if(appSettings.semanticPlanner) {
       return internalState.llmConfigs.semanticQuery;
     }
-    const defaultConfig = internalState.llmConfigs.default;
-    if ('systemPrompt' in defaultConfig) {
-      const dbId = await getSelectedDbId();
-      let savedQueries: string[] = []
-      if (dbId && appSettings.savedQueries) {
-        savedQueries = await getCleanedTopQueries(dbId)
-      }
-      return {
-        ...defaultConfig,
-        systemPrompt: renderString(defaultConfig.systemPrompt, {
-          savedQueries: savedQueries.join('\n--END_OF_QUERY\n')
-        })
-      }
-    }
-    return defaultConfig
+    return internalState.llmConfigs.default;
   }
 }
 

@@ -1,15 +1,16 @@
 import { DashboardInfo, DashboardMetabaseState } from './types';
 import _, { forEach, reduce, template, values } from 'lodash';
 import { MetabaseAppStateDashboard,  MetabaseAppStateType} from '../DOMToState';
-import { getTablesWithFields, getDatabaseInfoForSelectedDb } from '../getDatabaseSchema';
+import { getTablesWithFields } from '../getDatabaseSchema';
+import { getDatabaseInfo, getFieldResolvedName } from '../metabaseAPIHelpers';
+import { getDashboardState, getSelectedDbId } from '../metabaseStateAPI';
 import { RPCs } from 'web';
 import { metabaseToMarkdownTable } from '../operations';
-import { memoizedGetFieldResolvedName } from './util';
 import { find, get } from 'lodash';
 import { getTablesFromSqlRegex, TableAndSchema } from '../parseSql';
 import { getTableContextYAML } from '../catalog';
 
-const { getMetabaseState } = RPCs
+// Removed: const { getMetabaseState } = RPCs - using centralized state functions instead
 
 function getSelectedTabDashcardIds(dashboardMetabaseState: DashboardMetabaseState) {
   const currentDashboardData = dashboardMetabaseState.dashboards?.[dashboardMetabaseState.dashboardId];
@@ -208,7 +209,7 @@ async function substituteParameters(
       if (dashcardParameter.type != 'string/=') {
         throw new Error(`Parameter type ${dashcardParameter.type} is not supported in field filters. template tag: ${templateTag.name}`);
       }
-      const fieldName = await memoizedGetFieldResolvedName(templateTag.dimension[1])
+      const fieldName = await getFieldResolvedName(templateTag.dimension[1])
       sql = sql.replace(new RegExp(`{{\\s*${dashcardParameter.slug}\\s*}}`, 'g'), `${fieldName} in ${stringifyParams(parameterValue)}`);
     } else if (templateTag.type == 'text') {
       sql = sql.replace(new RegExp(`{{\\s*${dashcardParameter.slug}\\s*}}`, 'g'), `'${parameterValue}'`);
@@ -225,10 +226,11 @@ export async function getDashboardAppState(): Promise<MetabaseAppStateDashboard 
   const url = new URL(await RPCs.queryURL()).origin;
   const appSettings = RPCs.getAppSettings();
   const selectedCatalog = get(find(appSettings.availableCatalogs, { name: appSettings.selectedCatalog }), 'content')
-  const selectedDatabaseInfo = await getDatabaseInfoForSelectedDb();
+  const dbId = await getSelectedDbId();
+  const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined
   const defaultSchema = selectedDatabaseInfo?.default_schema; 
       
-  const dashboardMetabaseState: DashboardMetabaseState = await getMetabaseState('dashboard') as DashboardMetabaseState;
+  const dashboardMetabaseState: DashboardMetabaseState = await getDashboardState() as DashboardMetabaseState;
   if (!dashboardMetabaseState || !dashboardMetabaseState.dashboards || !dashboardMetabaseState.dashboardId) {
     console.warn('Could not get dashboard info');
     return null;
@@ -264,7 +266,7 @@ export async function getDashboardAppState(): Promise<MetabaseAppStateDashboard 
   })
   sqlTables = _.uniqBy(sqlTables, (table) => `${table.schema}::${table.name}`)
   const relevantTablesWithFields = await getTablesWithFields(appSettings.tableDiff, appSettings.drMode, !!selectedCatalog, sqlTables)
-  const tableContextYAML = getTableContextYAML(relevantTablesWithFields, selectedCatalog, appSettings.drMode, appSettings.enableUnique);
+  const tableContextYAML = getTableContextYAML(relevantTablesWithFields, selectedCatalog, appSettings.drMode);
   dashboardInfo.cards = filteredCards
   // filter out dashcards with null names or ids
   .filter(dashcard => dashcard.name !== null && dashcard.id !== null);
@@ -283,7 +285,7 @@ export async function getDashboardAppState(): Promise<MetabaseAppStateDashboard 
 
 
 // export async function getDashboardInfoForModelling(): Promise<DashboardInfoForModelling | undefined> {
-//   const dashboardMetabaseState: DashboardMetabaseState = await getMetabaseState('dashboard') as DashboardMetabaseState;
+//   const dashboardMetabaseState: DashboardMetabaseState = await getDashboardState() as DashboardMetabaseState;
 //   if (!dashboardMetabaseState || !dashboardMetabaseState.dashboards || !dashboardMetabaseState.dashboardId) {
 //     console.warn('Could not get dashboard info');
 //     return undefined;

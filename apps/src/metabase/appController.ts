@@ -28,37 +28,22 @@ import {
   primaryVisualizationTypes,
   Card,
   toLowerVisualizationType,
-  ParameterValues,
-  SearchApiResponse
  } from "./helpers/types";
 import {
   getTemplateTags as getTemplateTagsForVars,
   getParameters,
   getVariablesAndUuidsInQuery,
-  SnippetTemplateTag,
   MetabaseStateSnippetsDict,
-  getSnippetsInQuery,
-  getModelsInQuery,
   getAllTemplateTagsInQuery
 } from "./helpers/sqlQuery";
 import axios from 'axios'
-import { getSelectedDbId, getUserInfo } from "./helpers/getUserInfo";
+import { getSelectedDbId, getCurrentUserInfo as getUserInfo, getSnippets, getCurrentCard, getDashboardState } from "./helpers/metabaseStateAPI";
 import { runSQLQueryFromDashboard } from "./helpers/dashboard/runSqlQueryFromDashboard";
-import { v4 as uuidv4 } from 'uuid';
-import { fetchTableData } from "./helpers/parseTables";
+import { getTableData } from "./helpers/metabaseAPIHelpers";
 import { processSQLWithCtesOrModels } from "web";
 
 const SEMANTIC_QUERY_API = `${configs.SEMANTIC_BASE_URL}/query`
 type CTE = [string, string]
-
-
-type AllSnippetsResponse = {
-  name: string;
-  content: string;
-  id: number;
-}
-
-
 
 export class MetabaseController extends AppController<MetabaseAppState> {
   // 0. Exposed actions --------------------------------------------
@@ -76,7 +61,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       type: "BLANK",
     };
     sql = processSQLWithCtesOrModels(sql, ctes);
-    const allSnippetsDict = await RPCs.getMetabaseState("entities.snippets") as MetabaseStateSnippetsDict;
+    const allSnippetsDict = await getSnippets() as MetabaseStateSnippetsDict;
     const allTemplateTags = getAllTemplateTagsInQuery(sql, allSnippetsDict)
     const state = (await this.app.getState()) as MetabaseAppStateSQLEditor;
     const userApproved = await RPCs.getUserConfirmation({content: sql, contentTitle: "Update SQL query?", oldContent: state.sqlQuery});
@@ -86,7 +71,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     if (state.sqlEditorState == "closed") {
       await this.toggleSQLEditor("open");
     }
-    const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+    const currentCard = await getCurrentCard() as Card;
     const varsAndUuids = getVariablesAndUuidsInQuery(sql);
     const existingTemplateTags = currentCard.dataset_query.native['template-tags'];
     const existingParameters = currentCard.parameters;
@@ -131,7 +116,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       type: "BLANK",
     };
     sql = processSQLWithCtesOrModels(sql, ctes);
-    const allSnippetsDict = await RPCs.getMetabaseState("entities.snippets") as MetabaseStateSnippetsDict;
+    const allSnippetsDict = await getSnippets() as MetabaseStateSnippetsDict;
     const allTemplateTags = getAllTemplateTagsInQuery(sql, allSnippetsDict)
     const state = (await this.app.getState()) as MetabaseAppStateDashboard;
     const dbID = state?.selectedDatabaseInfo?.id as number
@@ -203,7 +188,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       actionContent.content = content;
       console.warn(content);
     }
-    const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+    const currentCard = await getCurrentCard() as Card;
     if (currentCard) {
       let parameters = _.get(currentCard, 'dataset_query.native.template-tags', {} as any);
       if (parameters[variable] == undefined) {
@@ -277,7 +262,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     }
     visualization_type = toCapitalCase(visualization_type);    
     if (primaryVisualizationTypes.includes(visualization_type) && (dimensions && metrics)) {
-      const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+      const currentCard = await getCurrentCard() as Card;
       if (currentCard) {
         currentCard.display = toLowerVisualizationType(visualization_type);
         const visualization_settings = {
@@ -338,7 +323,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
   async getTableSchemasById({ ids }: { ids: number[] }) {
     const actionContent: BlankMessageContent = { type: "BLANK" };
     // need to fetch schemas
-    const tablesPromises = ids.map(id => fetchTableData(id));
+    const tablesPromises = ids.map(id => getTableData(id));
     const tables = await Promise.all(tablesPromises);
     const tableSchemasContent = JSON.stringify(tables);
     actionContent.content = tableSchemasContent;
@@ -375,7 +360,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     }
     const searchResults = await searchTables(userInfo.id, selectedDbId, query);
     const tableIds = map(searchResults, (table) => table.id);
-    const tablesPromises = tableIds.slice(0, 20).map(id => fetchTableData(id));
+    const tablesPromises = tableIds.slice(0, 20).map(id => getTableData(id));
     const tableSchemas = await Promise.all(tablesPromises);
     tableSchemas.forEach((tableInfo, index) => {
       if (tableInfo != "missing") {
@@ -383,50 +368,6 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       }
     })
     actionContent.content = JSON.stringify(tableSchemas);
-    return actionContent
-  }
-
-  @Action({
-    labelRunning: "Searching for previous SQL queries",
-    labelDone: "Retrieved queries",
-    description: "Searches for previous SQL queries using the specified words.",
-    renderBody: ({words}: { words: string[] }) => {
-      return {text: null, code: JSON.stringify(words)}
-    }
-  })
-  async searchPreviousSQLQueries({ words }: { words: string[] }) {
-    const actionContent: BlankMessageContent = { type: "BLANK" };
-    const selectedDbId = await getSelectedDbId();
-    const endpoint = `/api/search?table_db_id=${selectedDbId}&search_native_query=true&models=card&models=dataset&q=${words.join(' ')}`;
-    let queries: {
-      name: string
-      description?: string
-      query: string
-    }[] = []
-    try {
-      const response = await RPCs.fetchData(endpoint, 'GET') as SearchApiResponse;
-      // need to get name, description, and query from each card and put into a json obj
-      queries = (response.data || []).map((card: any) => {
-        const query = get(card, 'dataset_query.native.query')
-        const name = get(card, 'name')
-        const description = get(card, 'description')
-        return {
-          name,
-          // only keep description if it's not null
-          ...(description != null && { description }),
-          query
-        }
-      }).filter(i => !!i)
-      // keep only the first 10 queries. TODO: pagination?
-      .slice(0, 10);
-    } catch (error) {
-      queries = [];
-    }
-    // truncate to 5k chars and add a ...[truncated] if needed
-    actionContent.content = JSON.stringify(queries, null, 2)
-    if (actionContent.content.length > 5000) {
-      actionContent.content = actionContent.content.slice(0, 5000) + '...[truncated]';
-    }
     return actionContent
   }
 
@@ -441,7 +382,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
   async getDashcardDetailsById({ ids }: { ids: number[] }) {
     let actionContent: BlankMessageContent = { type: "BLANK" };
     const dashboardMetabaseState: DashboardMetabaseState =
-      await RPCs.getMetabaseState("dashboard") as DashboardMetabaseState;
+      await getDashboardState() as DashboardMetabaseState;
 
     if (
       !dashboardMetabaseState ||
@@ -617,4 +558,3 @@ export class MetabaseController extends AppController<MetabaseAppState> {
   }
 
 }
-

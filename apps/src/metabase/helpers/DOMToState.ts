@@ -1,14 +1,15 @@
 import { RPCs } from 'web'
-import { getRelevantTablesForSelectedDb, getDatabaseInfoForSelectedDb, memoizedGetDatabases, memoizedGetDatabaseTablesWithoutFields, extractDbInfo, getTablesWithFields } from './getDatabaseSchema';
+import { getRelevantTablesForSelectedDb, getTablesWithFields } from './getDatabaseSchema';
+import { getDatabaseInfo, getDatabases, getDatabaseTablesWithoutFields } from './metabaseAPIHelpers';
 import { getAndFormatOutputTable, getSqlErrorMessage } from './operations';
 import { isDashboardPageUrl } from './dashboard/util';
 import { DashboardInfo } from './dashboard/types';
 import { getDashboardAppState } from './dashboard/appState';
 import { visualizationSettings, Card, ParameterValues, FormattedTable } from './types';
-const { getMetabaseState, queryURL } = RPCs;
+const { queryURL } = RPCs;
 import { Measure, Dimension, SemanticQuery, TableInfo } from "web/types";
 import { applyTableDiffs, handlePromise } from '../../common/utils';
-import { getSelectedDbId } from './getUserInfo';
+import { getSelectedDbId, getCurrentQuery, hasQueryResults, isNativeEditorOpen, isShowingRawTable, isShowingChartTypeSidebar, getVisualizationType, getVisualizationSettings, getCurrentCard, getParameterValues } from './metabaseStateAPI';
 import { add, assignIn, find, get, keyBy, map } from 'lodash';
 import { getTablesFromSqlRegex } from './parseSql';
 import { getTableContextYAML } from './catalog';
@@ -89,10 +90,11 @@ export async function convertDOMtoStateSQLQuery() {
   // CAUTION: This one does not update when changed via ui for some reason
   // const dbId = _.get(hashMetadata, 'dataset_query.database');
   const url = new URL(await RPCs.queryURL()).origin;
-  const availableDatabases = (await memoizedGetDatabases())?.data?.map(({ name }) => name);
-  const selectedDatabaseInfo = await getDatabaseInfoForSelectedDb();
+  const availableDatabases = (await getDatabases())?.data?.map(({ name }) => name);
+  const dbId = await getSelectedDbId();
+  const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined;
   const defaultSchema = selectedDatabaseInfo?.default_schema;
-  const sqlQuery = await getMetabaseState('qb.card.dataset_query.native.query') as string
+  const sqlQuery = await getCurrentQuery()
   const appSettings = RPCs.getAppSettings()
   const cache = RPCs.getCache()
   const sqlTables = getTablesFromSqlRegex(sqlQuery)
@@ -106,16 +108,16 @@ export async function convertDOMtoStateSQLQuery() {
     })
   }
   const relevantTablesWithFields = await getTablesWithFields(appSettings.tableDiff, appSettings.drMode, !!selectedCatalog, sqlTables)
-  const tableContextYAML = getTableContextYAML(relevantTablesWithFields, selectedCatalog, appSettings.drMode, appSettings.enableUnique);
+  const tableContextYAML = getTableContextYAML(relevantTablesWithFields, selectedCatalog, appSettings.drMode);
   
-  const queryExecuted = await getMetabaseState('qb.queryResults') !== null;
-  const isNativeEditorOpen = await getMetabaseState('qb.uiControls.isNativeEditorOpen')
+  const queryExecuted = await hasQueryResults();
+  const nativeEditorOpen = await isNativeEditorOpen()
   const sqlErrorMessage = await getSqlErrorMessage();
   const outputTableMarkdown = await getAndFormatOutputTable();
-  const isShowingRawTable = await getMetabaseState('qb.uiControls.isShowingRawTable')
-  const isShowingChartTypeSidebar = await getMetabaseState('qb.uiControls.isShowingChartTypeSidebar')
-  const vizType = await getMetabaseState('qb.card.display') as string
-  const visualizationSettings = await getMetabaseState('qb.card.visualization_settings') as visualizationSettings
+  const showingRawTable = await isShowingRawTable()
+  const showingChartTypeSidebar = await isShowingChartTypeSidebar()
+  const vizType = await getVisualizationType()
+  const visualizationSettings = await getVisualizationSettings() as visualizationSettings
   const sqlVariables = await getSqlVariables();
   const metabaseAppStateSQLEditor: MetabaseAppStateSQLEditor = {
     type: MetabaseAppStateType.SQLEditor,
@@ -124,9 +126,9 @@ export async function convertDOMtoStateSQLQuery() {
     relevantTables: relevantTablesWithFields,
     sqlQuery,
     queryExecuted,
-    sqlEditorState: isNativeEditorOpen ? 'open' : 'closed',
-    visualizationType: isShowingRawTable ? 'table' : vizType,
-    visualizationSettingsStatus: isShowingChartTypeSidebar ? 'open' : 'closed',
+    sqlEditorState: nativeEditorOpen ? 'open' : 'closed',
+    visualizationType: showingRawTable ? 'table' : vizType,
+    visualizationSettingsStatus: showingChartTypeSidebar ? 'open' : 'closed',
     outputTableMarkdown,
     visualizationSettings,
     sqlVariables,
@@ -154,7 +156,8 @@ export async function convertDOMtoStateDashboard(): Promise<MetabaseAppStateDash
 export async function semanticQueryState() {
   const { semanticLayer, semanticQuery, currentSemanticLayer } = RPCs.getSemanticInfo()
   const { availableMeasures, availableDimensions } = semanticLayer
-  const selectedDatabaseInfo = await getDatabaseInfoForSelectedDb();
+  const dbId = await getSelectedDbId();
+  const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined;
   const outputTableMarkdown = await getAndFormatOutputTable();
   
   const metabaseSemanticQueryAppState: MetabaseSemanticQueryAppState = {
@@ -169,13 +172,9 @@ export async function semanticQueryState() {
   return metabaseSemanticQueryAppState;
 }
 
-export async function isDashboardPage() {
-  const url = await queryURL();
-  return isDashboardPageUrl(url);
-}
-
 export async function convertDOMtoState() {
-  if (await isDashboardPage()) {
+  const url = await queryURL();
+  if (isDashboardPageUrl(url)) {
     return await convertDOMtoStateDashboard();
   }
   const appSettings = RPCs.getAppSettings()
@@ -185,11 +184,11 @@ export async function convertDOMtoState() {
   return await convertDOMtoStateSQLQuery();
 }
 async function getSqlVariables() {
-  const currentCard = await RPCs.getMetabaseState("qb.card") as Card;
+  const currentCard = await getCurrentCard() as Card;
   if (!currentCard) {
     return {};
   }
-  const currentParameterValues = await RPCs.getMetabaseState("qb.parameterValues") as ParameterValues;
+  const currentParameterValues = await getParameterValues() as ParameterValues;
   const parameters = currentCard.dataset_query.native['template-tags'];
   const sqlVariables: Record<string, {
     value: string,
