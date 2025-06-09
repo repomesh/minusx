@@ -13,17 +13,19 @@ type AsyncFunction = (...args: any[]) => Promise<any>;
  * @param fn - The function to memoize
  * @param ttl - The time to live in seconds. Negative values will never expire
  * @param rewarmTtl - The rewarm time in seconds. If set, returns stale data while refreshing in background
+ * @param cacheKeyBase - Optional base for cache key. If not provided, uses fn.name
  * @returns The memoized function with coalescing and optional background refresh
  */
 export function memoize<T extends AsyncFunction>(
   fn: T, 
   ttl: number = DEFAULT_TTL,
-  rewarmTtl: number = DEFAULT_REWARM_TTL
+  rewarmTtl: number = DEFAULT_REWARM_TTL,
+  cacheKeyBase?: string
 ) {
   const inProgressPromises: Record<string, Promise<Awaited<ReturnType<T>>> | null> = {};
 
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
-    const cacheKey = `${fn.name}-${JSON.stringify(args)}`;
+    const cacheKey = `${cacheKeyBase || fn.name}-${JSON.stringify(args)}`;
     const now = Date.now();
 
     // Check if we have cached data

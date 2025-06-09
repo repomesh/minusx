@@ -163,7 +163,8 @@ export function createAPI<T extends Record<string, any>>(
       });
     },
     finalConfig.cache_ttl,
-    finalConfig.cache_rewarm_ttl
+    finalConfig.cache_rewarm_ttl,
+    template  // Use template as cache key base to avoid anonymous function collisions
   );
 
   // Return the callable function
