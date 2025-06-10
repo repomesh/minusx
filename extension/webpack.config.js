@@ -107,6 +107,12 @@ var options = {
       },
       {
         test: /\.md$/,
+        resourceQuery: /raw/,
+        type: 'asset/source',
+      },
+      {
+        test: /\.md$/,
+        resourceQuery: { not: [/raw/] },
         use: 'html-loader',
       },
     ],
