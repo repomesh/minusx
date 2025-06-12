@@ -12,6 +12,7 @@ import { getOrigin } from './origin';
 export interface MetadataItem {
   metadata_type: string;
   metadata_value: any;
+  version: string;
 }
 
 export interface MetadataRequest {

@@ -33,8 +33,8 @@ export const fetchDatabaseWithTables = createAPI<{ db_id: number }>(
       // }))
       const dbMetadata = {
         metadata_type: 'db',
+        version: 'v1',
         metadata_value: {
-          version: 'v1',
           id: get(response, 'id'),
           engine: get(response, 'engine'),
           name: get(response, 'name'),
@@ -49,8 +49,8 @@ export const fetchDatabaseWithTables = createAPI<{ db_id: number }>(
       const metadata = response.tables.map((table: any) => {
         return {
           metadata_type: 'db_table',
+          version: 'v1',
           metadata_value: {
-            version: 'v1',
             id: get(table, 'id'),
             name: get(table, 'name'),
             display_name: get(table, 'display_name'),
@@ -77,8 +77,8 @@ export const fetchTableMetadata = createAPI<{ table_id: number }>(
     metadataProcessor: (response) => {
       const metadata = {
         metadata_type: 'table',
+        version: 'v1',
         metadata_value: {
-          version: 'v1',
           id: get(response, 'id'),
           name: get(response, 'name'),
           display_name: get(response, 'display_name'),
@@ -89,8 +89,8 @@ export const fetchTableMetadata = createAPI<{ table_id: number }>(
       const fieldMetadata = response.fields.map((field: any) => {
         return {
           metadata_type: 'table_field',
+          version: 'v1',
           metadata_value: {
-            version: 'v1',
             id: get(field, 'id'),
             name: get(field, 'name'),
             database_type: get(field, 'database_type'),
