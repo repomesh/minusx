@@ -56,6 +56,7 @@ import { applyTableDiffs, getCurrentQuery, getSelectedAndRelevantModels } from "
 import { toast } from '../../app/toast'
 import { NUM_RELEVANT_TABLES, resetRelevantTables } from './TablesCatalog'
 import { setupCollectionsAndModels } from '../../state/settings/availableCatalogsListener'
+import { Notify } from './Notify'
 
 
 
@@ -443,6 +444,13 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
           }
         }} colorScheme="minusxGreen" size="sm" disabled={taskInProgress}>feelin' lucky</Button>
         } */}
+        {
+            ((toolContext.pageType === 'mbql-editor') || (toolContext.pageType === 'mbql-visualization')) && 
+            <Notify>
+                <Text fontSize="xs" lineHeight={"1rem"}>Question Builder feature is new and still in progress. Some things might not work just yet.</Text>
+            </Notify>
+        }
+        
         <SettingsBlock title='Quick Actions'>
         <HStack flexWrap={"wrap"} gap={1}>
           { currentTool == 'metabase' && <Button size="xs" leftIcon={<BiBookBookmark size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://docs.minusx.ai/en/collections/10790008-minusx-in-metabase" target="_blank">Docs</Button> }
