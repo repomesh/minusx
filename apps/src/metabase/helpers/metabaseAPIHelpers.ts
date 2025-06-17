@@ -10,7 +10,7 @@ import { getTablesFromSqlRegex, TableAndSchema } from './parseSql';
 import { handlePromise, deterministicSample } from '../../common/utils';
 import { getCurrentUserInfo, getSelectedDbId } from './metabaseStateAPI';
 import { extractTableInfo } from './parseTables';
-import { DatabaseResponse, DatabaseInfo, DatabaseInfoWithTables, FormattedTable } from './metabaseAPITypes';
+import { DatabaseResponse, DatabaseInfo, FormattedTable, MetabaseModel, DatabaseInfoWithTablesAndModels } from './metabaseAPITypes';
 
 import {
   fetchUserEdits,
@@ -26,8 +26,10 @@ import {
   executeDatasetQuery,
   fetchSearchByQuery,
   fetchFieldUniqueValues,
-  fetchTableMetadata
+  fetchTableMetadata,
+  fetchModels
 } from './metabaseAPI';
+import { SearchApiResponse } from './types';
 
 // =============================================================================
 // HELPER FUNCTIONS FOR DATA EXTRACTION
@@ -59,6 +61,7 @@ function getDefaultSchema(databaseInfo: any) {
   };
 
   if (engine in DEFAULT_SCHEMAS) {
+    // @ts-ignore
     return DEFAULT_SCHEMAS[engine];
   }
 
@@ -164,8 +167,28 @@ export async function getDatabases() {
   return await fetchDatabases({}) as DatabaseResponse;
 }
 
-export async function getDatabaseTablesWithoutFields(dbId: number): Promise<DatabaseInfoWithTables> {
+export const getAllRelevantModelsForSelectedDb = async (dbId: number): Promise<MetabaseModel[]> => {
+  const models = await fetchModels({db_id: dbId}) as SearchApiResponse;
+  const data = get(models, 'data', []);
+  const modelsAsTables = data.map(model => {
+    return {
+      name: model.name,
+      collectionName: model.collection?.name,
+      modelId: model.id,
+      collectionId: model.collection?.id,
+      description: model.description || undefined
+    }
+  })
+  // remove internal collection models from selection menu since right now we're handling them separately
+  // eventually should just be one way to handle all kinds of metabase models
+  return modelsAsTables.filter((model: MetabaseModel) => model.collectionName !== 'mx_internal');
+}
+
+
+export async function getDatabaseTablesAndModelsWithoutFields(dbId: number): Promise<DatabaseInfoWithTablesAndModels> {
   const jsonResponse = await fetchDatabaseWithTables({ db_id: dbId });
+  
+  const models = await getAllRelevantModelsForSelectedDb(dbId) ;
   const defaultSchema = getDefaultSchema(jsonResponse);
   const tables = await Promise.all(
       map(get(jsonResponse, 'tables', []), (table: any) => extractTableInfo(table, false))
@@ -173,7 +196,8 @@ export async function getDatabaseTablesWithoutFields(dbId: number): Promise<Data
 
   return {
       ...extractDbInfo(jsonResponse, defaultSchema),
-      tables: tables || []
+      tables: tables || [],
+      models: models || []
   };
 }
 

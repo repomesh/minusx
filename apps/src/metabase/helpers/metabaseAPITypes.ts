@@ -32,7 +32,7 @@ export interface APIConfig {
 export interface FormattedColumn {
   description?: string;
   name: string;
-  id: number;
+  id: number | string;
   type: string;
   sample_values?: any[]; 
   distinct_count?: number;
@@ -45,10 +45,18 @@ export interface FormattedTable {
   name: string;
   id: number;
   schema: string;
-  columns?: { [key: number]: FormattedColumn };
+  columns?: { [key: number | string]: FormattedColumn };
   related_tables_freq?: number[][];
   count?: number;
   sample_values_completion_percentage?: number;
+}
+
+export interface MetabaseModel {
+  name: string;
+  collectionName: string | null;
+  modelId: number;
+  collectionId: number | null;
+  description?: string;
 }
 
 export interface DatabaseInfo {
@@ -64,8 +72,9 @@ export interface DatabaseInfo {
   }
 }
 
-export interface DatabaseInfoWithTables extends DatabaseInfo {
+export interface DatabaseInfoWithTablesAndModels extends DatabaseInfo {
   tables: FormattedTable[];
+  models: MetabaseModel[];
 }
 
 export interface DatabaseResponse {

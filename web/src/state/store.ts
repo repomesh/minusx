@@ -393,14 +393,20 @@ const migrations = {
       lastFetchTime: null,
     }
     return newState
+  },
+  34: (state: RootState) => {
+    let newState = {...state}
+    newState.settings.selectedModels = []
+    return newState
   }
 }
 
 const persistConfig = {
   key: 'root',
-  version: 33,
+  version: 34,
   storage,
   blacklist: ['billing', 'cache'],
+  // @ts-ignore
   migrate: createMigrate(migrations, { debug: true }),
 };
 
@@ -429,13 +435,17 @@ export const getState = () => {
   return store.getState() as RootState
 }
 
+// @ts-ignore
 window.__GET_STATE__ = () => {
+  // @ts-ignore
   if (window.IS_PLAYWRIGHT) {
     return getState()
   }
 }
 
+// @ts-ignore
 window.__DISPATCH__ = (action: Action) => {
+  // @ts-ignore
   if (window.IS_PLAYWRIGHT) {
     return store.dispatch(action)
   }

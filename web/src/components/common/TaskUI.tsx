@@ -20,10 +20,10 @@ import AbortTaskButton from './AbortTaskButton'
 import { ChatSection } from './Chat'
 import { BiScreenshot, BiPaperclip, BiMessageAdd, BiEdit, BiTrash, BiBookBookmark, BiTable, BiRefresh } from 'react-icons/bi'
 import chat from '../../chat/chat'
-import _, { get, isEmpty, isUndefined, sortBy } from 'lodash'
+import _, { get, isEmpty, isEqual, isUndefined, sortBy } from 'lodash'
 import { abortPlan, startNewThread } from '../../state/chat/reducer'
 import { resetThumbnails, setInstructions as setTaskInstructions } from '../../state/thumbnails/reducer'
-import { setSuggestQueries, setDemoMode, DEFAULT_TABLES, TableInfo } from '../../state/settings/reducer'
+import { setSuggestQueries, setDemoMode, DEFAULT_TABLES, TableInfo, setSelectedModels } from '../../state/settings/reducer'
 import { RootState } from '../../state/store'
 import { getSuggestions } from '../../helpers/LLM/remote'
 import { Thumbnails } from './Thumbnails'
@@ -52,7 +52,7 @@ import { SettingsBlock } from './SettingsBlock'
 import { SupportButton } from './Support'
 import { FormattedTable, MetabaseContext } from 'apps/types';
 import { getApp } from '../../helpers/app';
-import { applyTableDiffs } from "apps";
+import { applyTableDiffs, getCurrentQuery, getSelectedAndRelevantModels } from "apps";
 import { toast } from '../../app/toast'
 import { NUM_RELEVANT_TABLES, resetRelevantTables } from './TablesCatalog'
 import { setupCollectionsAndModels } from '../../state/settings/availableCatalogsListener'
@@ -83,6 +83,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   
   const selectedCatalog = useSelector((state: RootState) => state.settings.selectedCatalog)
   const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
+  const selectedModels = useSelector((state: RootState) => state.settings.selectedModels)
 
   const tableDiff = useSelector((state: RootState) => state.settings.tableDiff)
   const drMode = useSelector((state: RootState) => state.settings.drMode)
@@ -202,7 +203,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         toastDescription = "You can switch to Default Tables catalog in settings"
         preventRunTask = true
     }
-    else if (selectedCatalog === DEFAULT_TABLES && isEmpty(validAddedTables)) {
+    else if (selectedCatalog === DEFAULT_TABLES && isEmpty(validAddedTables) && isEmpty(selectedModels)) {
         toastTitle = 'No Table in Default Tables'
         toastDescription = "Please select at least one table in Default Tables catalog"
         preventRunTask = true
@@ -218,6 +219,19 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
             position: 'bottom-right',
         })
     }
+    // parse the sql query and check if it has any models in it
+    // add it to selectedModels if so
+    // actually not doing this right now, maybe later
+    // if (toolContext.pageType === 'sql') {
+    //   const sqlQuery = await getCurrentQuery()
+    //   const allModels = toolContext.dbInfo.models
+    //   const relevantModels = await getSelectedAndRelevantModels(sqlQuery || "",  selectedModels, allModels)
+    //   // check if relevantModels is different from selectedModels
+    //   if (!isEqual(relevantModels, selectedModels)) {
+    //     // dispatch the relevant models to be the new selectedModels
+    //     dispatch(setSelectedModels(relevantModels))
+    //   }
+    // }
 
     if (instructions) {
       const text = instructions

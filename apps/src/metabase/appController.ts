@@ -40,10 +40,11 @@ import {
 import axios from 'axios'
 import { getSelectedDbId, getCurrentUserInfo as getUserInfo, getSnippets, getCurrentCard, getDashboardState } from "./helpers/metabaseStateAPI";
 import { runSQLQueryFromDashboard } from "./helpers/dashboard/runSqlQueryFromDashboard";
-import { getTableData } from "./helpers/metabaseAPIHelpers";
+import { getAllRelevantModelsForSelectedDb, getTableData } from "./helpers/metabaseAPIHelpers";
 import { processSQLWithCtesOrModels, dispatch, updateIsDevToolsOpen, updateDevToolsTabName } from "web";
 import { fetchTableMetadata } from "./helpers/metabaseAPI";
 import { getSourceTableIds } from "./helpers/mbql/utils";
+import { replaceLLMFriendlyIdentifiersInSqlWithModels } from "./helpers/metabaseModels";
 
 const SEMANTIC_QUERY_API = `${configs.SEMANTIC_BASE_URL}/query`
 type CTE = [string, string]
@@ -101,6 +102,10 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       type: "BLANK",
     };
     sql = processSQLWithCtesOrModels(sql, ctes);
+    const metabaseState = this.app as App<MetabaseAppState>;
+    const allModels = metabaseState.useStore().getState().toolContext?.dbInfo?.models || [];
+    // use allModels for this replacement
+    sql = replaceLLMFriendlyIdentifiersInSqlWithModels(sql, allModels)
     const allSnippetsDict = await getSnippets() as MetabaseStateSnippetsDict;
     const allTemplateTags = getAllTemplateTagsInQuery(sql, allSnippetsDict)
     const state = (await this.app.getState()) as MetabaseAppStateSQLEditor;
@@ -156,6 +161,10 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       type: "BLANK",
     };
     sql = processSQLWithCtesOrModels(sql, ctes);
+    const metabaseState = this.app as App<MetabaseAppState>;
+    const allModels = metabaseState.useStore().getState().toolContext?.dbInfo?.models || [];
+    // use all models in this replacement
+    sql = replaceLLMFriendlyIdentifiersInSqlWithModels(sql, allModels)
     const allSnippetsDict = await getSnippets() as MetabaseStateSnippetsDict;
     const allTemplateTags = getAllTemplateTagsInQuery(sql, allSnippetsDict)
     const state = (await this.app.getState()) as MetabaseAppStateDashboard;

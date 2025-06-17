@@ -1,14 +1,14 @@
-import { FormattedTable, SearchApiResponse } from './types';
+import { FormattedTable } from './types';
 import { getTablesFromSqlRegex, TableAndSchema } from './parseSql';
-import _, { get, isEmpty } from 'lodash';
+import _ from 'lodash';
 import { getSelectedDbId } from './metabaseStateAPI';
-import { getUserTables, searchUserQueries, getDatabaseTablesWithoutFields } from './metabaseAPIHelpers';
+import { getUserTables, searchUserQueries, getDatabaseTablesAndModelsWithoutFields } from './metabaseAPIHelpers';
 import { applyTableDiffs, handlePromise } from '../../common/utils';
 import { TableDiff } from 'web/types';
 import { getTableData } from './metabaseAPIHelpers';
 
 // Types moved to metabaseAPITypes.ts
-export type { DatabaseInfo, DatabaseInfoWithTables } from './metabaseAPITypes';
+export type { DatabaseInfo, DatabaseInfoWithTablesAndModels } from './metabaseAPITypes';
 
 function getTableKey<T extends TableAndSchema>(tableInfo: T): string {
   return `${tableInfo.schema?.toLowerCase()}.${tableInfo.name.toLowerCase()}`;
@@ -70,10 +70,11 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
   const tablesFromSql = lowerAndDefaultSchemaAndDedupe(getTablesFromSqlRegex(sql));
   const [userTables, {tables: allDBTables, default_schema}] = await Promise.all([
     getUserTables(),
-    handlePromise(getDatabaseTablesWithoutFields(dbId), "Failed to get database tables", {
+    handlePromise(getDatabaseTablesAndModelsWithoutFields(dbId), "Failed to get database tables", {
       name: '', description: '', id: 0, dialect: '', default_schema: '',
       dbms_version: { flavor: '', version: '', semantic_version: [] },
-      tables: []
+      tables: [],
+      models: []
     })
   ]);
   const tableMap = {}; // Empty table map - was getUserTableMap() placeholder
@@ -88,10 +89,11 @@ const getAllRelevantTablesForSelectedDb = async (dbId: number, sql: string): Pro
   return fullTableInfo
 }
 
+
 export const searchTables = async (userId: number, dbId: number, query: string): Promise<FormattedTable[]> => {
   const [userTables, {tables: allDBTables, default_schema}] = await Promise.all([
     searchUserQueries(userId, dbId, query),
-    getDatabaseTablesWithoutFields(dbId),
+    getDatabaseTablesAndModelsWithoutFields(dbId),
   ]).catch(err => {
     console.warn("[minusx] Error getting search tables", err);
     throw err;
@@ -125,6 +127,8 @@ export const getTablesWithFields = async (tableDiff?: TableDiff, drMode = false,
   let tableInfos = await Promise.all(tableIds.map(id => getTableData(id)));
   return tableInfos.filter(tableInfo => tableInfo != "missing")
 }
+
+
 
 export const getRelevantTablesForSelectedDb = async (sql: string): Promise<FormattedTable[]> => {
   const dbId = await getSelectedDbId();

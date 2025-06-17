@@ -1,6 +1,6 @@
 import { getParsedIframeInfo, RPCs } from 'web'
-import { getRelevantTablesForSelectedDb, getTablesWithFields } from './getDatabaseSchema';
-import { getDatabaseInfo, getDatabases, getDatabaseTablesWithoutFields } from './metabaseAPIHelpers';
+import { getTablesWithFields } from './getDatabaseSchema';
+import { getAllRelevantModelsForSelectedDb, getDatabaseInfo, getDatabases } from './metabaseAPIHelpers';
 import { getAndFormatOutputTable, getSqlErrorMessage } from './operations';
 import { isDashboardPageUrl } from './dashboard/util';
 import { DashboardInfo } from './dashboard/types';
@@ -17,6 +17,7 @@ import { catalogAsModels } from 'web';
 import { canUseModelsModeForCatalog } from '../../../../web/src/helpers/catalogAsModels';
 import { getMBQLAppState } from './mbql/appState';
 import { isMBQLPageUrl, MBQLInfo } from './mbql/utils';
+import { getModelsWithFields, getSelectedAndRelevantModels, modifySqlForMetabaseModels} from './metabaseModels';
 
 const {modifySqlForMxModels} = catalogAsModels
 
@@ -110,7 +111,7 @@ export async function convertDOMtoStateSQLQuery() {
   const dbId = await getSelectedDbId();
   const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined;
   const defaultSchema = selectedDatabaseInfo?.default_schema;
-  const sqlQuery = await getCurrentQuery()
+  let sqlQuery = await getCurrentQuery()
   const appSettings = RPCs.getAppSettings()
   const cache = RPCs.getCache()
   const sqlTables = getTablesFromSqlRegex(sqlQuery)
@@ -131,8 +132,12 @@ export async function convertDOMtoStateSQLQuery() {
     }
     return table
   })
-  const tableContextYAML = getTableContextYAML(relevantTablesWithFields, selectedCatalog, appSettings.drMode);
-  
+  const allModels = dbId ? await getAllRelevantModelsForSelectedDb(dbId) : []
+  const relevantModels = await getSelectedAndRelevantModels(sqlQuery || "", appSettings.selectedModels, allModels)
+  const relevantModelsWithFields = await getModelsWithFields(relevantModels)
+  const allFormattedTables = [...relevantTablesWithFields, ...relevantModelsWithFields]
+  const tableContextYAML = getTableContextYAML(allFormattedTables, selectedCatalog, appSettings.drMode);
+  sqlQuery = modifySqlForMetabaseModels(sqlQuery || "", relevantModels)
   const queryExecuted = await hasQueryResults();
   const nativeEditorOpen = await isNativeEditorOpen()
   const sqlErrorMessage = await getSqlErrorMessage();
@@ -147,7 +152,7 @@ export async function convertDOMtoStateSQLQuery() {
     availableDatabases,
     selectedDatabaseInfo,
     relevantTables: relevantTablesWithFields,
-    sqlQuery,
+    sqlQuery: sqlQuery || '',
     queryExecuted,
     sqlEditorState: nativeEditorOpen ? 'open' : 'closed',
     visualizationType: showingRawTable ? 'table' : vizType,
@@ -195,6 +200,7 @@ export async function semanticQueryState() {
     currentSemanticQuery: semanticQuery,
     dialect: selectedDatabaseInfo?.dialect,
     outputTableMarkdown,
+    // @ts-ignore
     currentSemanticLayer,
     isEmbedded: getParsedIframeInfo().isEmbedded
   }
