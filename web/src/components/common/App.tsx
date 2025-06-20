@@ -38,6 +38,7 @@ import { toast } from '../../app/toast'
 import { captureEvent, GLOBAL_EVENTS } from '../../tracking'
 import NotificationHandler from './NotificationHandler'
 import notificationService from '../../services/notificationService'
+import { useSocketIO } from '../../hooks/useSocketIO'
 
 
 const useAppStore = getApp().useStore()
@@ -113,6 +114,28 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   const toolVersion = getParsedIframeInfo().toolVersion
   const isSheets = tool == 'google' && toolVersion == 'sheets'
 //   const metabaseMode = useSelector((state: RootState) => state.settings.aiRules) == '' ? 'Basic' : 'Custom'
+  
+  // Get JWT token for Socket.io authentication
+  const sessionJwt = useSelector((state: RootState) => state.auth.session_jwt)
+
+  // Simple Socket.io integration
+  useSocketIO({
+    sessionToken: sessionJwt,
+    onMessage: (message) => {
+      console.log('Socket.io message received:', message);
+    },
+    onConnect: () => {
+      console.log('Socket.io connected successfully');
+    },
+    onDisconnect: (reason) => {
+      console.log('Socket.io disconnected:', reason);
+    },
+    onError: (error) => {
+      console.log(error.message)
+      console.error('Socket.io connection error:', error);
+    }
+  });
+
   useEffect(() => {
     getBillingInfo().then(billingInfo => {
       dispatch(setBillingInfo({
@@ -305,7 +328,6 @@ const AppBody = forwardRef((_props, ref) => {
     }
   }, []) 
   useEffect(() => {
-    console.log('Session token is', auth.session_jwt)
     if (_.isUndefined(auth.session_jwt)) {
       authModule.register().then((data) => {
         console.log('registered', data)
