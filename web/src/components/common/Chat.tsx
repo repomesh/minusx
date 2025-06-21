@@ -18,10 +18,19 @@ import { Tasks } from './Tasks'
 // this stuff is in the 'tool' messages, but we're ony rendering 'assistant' messages
 // so this copy needs to be done while rendering.
 function addToolInfoToActionPlanMessages(messages: Array<ChatMessage>) {
-  const toolMessages = messages.filter(message => message.role == 'tool') as Array<ActionChatMessage>
-  const toolMessageMap = new Map(toolMessages.map((message: ActionChatMessage) => [message.action.id, message]))
-  return messages.map(message => {
-    if (message.role == 'assistant') {
+  const result = [...messages]
+  const toolMessageMap = new Map<string, ActionChatMessage>()
+  
+  // Process messages in reverse order
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    
+    if (message.role === 'tool') {
+      // Add tool message to map
+      const toolMessage = message as ActionChatMessage
+      toolMessageMap.set(toolMessage.action.id, toolMessage)
+    } else if (message.role === 'assistant') {
+      // Process assistant message using current tool map
       const toolCalls = message.content.toolCalls.map(toolCall => {
         const toolMessage = toolMessageMap.get(toolCall.id)
         if (toolMessage) {
@@ -34,17 +43,21 @@ function addToolInfoToActionPlanMessages(messages: Array<ChatMessage>) {
           return toolCall
         }
       })
-      return {
+      
+      result[i] = {
         ...message,
         content: {
           ...message.content,
           toolCalls
         }
       }
-    } else {
-      return message
+      
+      // Clear the map after processing this assistant message
+      toolMessageMap.clear()
     }
-  })
+  }
+  
+  return result
 }
 
 const Chat: React.FC<ReturnType<typeof addToolInfoToActionPlanMessages>[number]> = ({
