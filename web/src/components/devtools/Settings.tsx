@@ -16,6 +16,7 @@ import CreditsPill from '../common/CreditsPill';
 import { SettingsBlock } from '../common/SettingsBlock';
 import { GroupViewer } from '../common/GroupViewer';
 import { getApp } from '../../helpers/app';
+import { SupportButton } from '../common/Support'
 
 export const TelemetryToggle = ({color}:{color: 'minusxBW.800' | 'minusxBW.50'}) => {
   const uploadLogs = useSelector((state: RootState) => state.settings.uploadLogs)
@@ -224,13 +225,14 @@ const SettingsPage = () => {
       <SettingsBlock title="Support">
         <HStack justifyContent={"space-between"}>
           <HStack>
-            <Text color={"minusxBW.800"} fontSize="sm">Discord </Text>
-            <BsDiscord size={18} color={"minusxBW.800"} />
+            <Text color={"minusxBW.800"} fontSize="sm">Live Support </Text>
+            {/* <BsDiscord size={18} color={"minusxBW.800"} /> */}
           </HStack>
-          <IconButton size="sm" colorScheme={"minusxGreen"} variant="ghost" aria-label="See Prompts" icon={<Icon as={BiLinkExternal} boxSize={4} />} onClick={() =>  window.open(discordLink, '_blank')} />
+          {/* <IconButton size="sm" colorScheme={"minusxGreen"} variant="ghost" aria-label="See Prompts" icon={<Icon as={BiLinkExternal} boxSize={4} />} onClick={() =>  window.open(discordLink, '_blank')} /> */}
+          <SupportButton email={auth.email || ''}/>
         </HStack>
         <Stack direction='row' alignItems={"center"} justifyContent={"space-between"}>
-          <Text color={"minusxBW.800"} fontSize="sm">Chat Thread ID</Text>
+          <Text color={"minusxBW.800"} fontSize="sm">Chat ID</Text>
           <Badge color={"minusxGreen.600"} size={"xs"}>{activeThread.id}</Badge>
         </Stack>
       </SettingsBlock>
