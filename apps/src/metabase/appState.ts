@@ -330,7 +330,8 @@ function shouldEnable(elements: DOMQueryMapResponse, url: string) {
         "type": "question"
     }))
   const SQLQueryURL = new URL(url).origin + '/question#' + hash;
-  const reason = `To enable MinusX on Metabase, head over to the SQL query [page](${SQLQueryURL})!`
+  const MBQLURL = new URL(url).origin + '/question/notebook';
+  const reason = `To enable MinusX on Metabase, head over to the SQL query [page](${SQLQueryURL}) or the Question Builder [page](${MBQLURL})!`
   const metabasePageType = determineMetabasePageType(elements, url);
   if (metabasePageType === 'unknown') {
     return {

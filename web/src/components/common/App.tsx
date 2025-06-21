@@ -304,7 +304,7 @@ function DisabledOverlayComponent({ toolEnabledReason }: { toolEnabledReason: st
           fontSize: '1rem',
           fontWeight: 'bold',
           color: '#fff',
-          padding: '10px 50px',
+          padding: '10px 30px',
           margin: '10px',
           backgroundColor: '#16a085',
           borderRadius: '5px',
