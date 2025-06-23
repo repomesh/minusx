@@ -136,7 +136,8 @@ export const metabaseInternalState: MetabaseInternalState = {
 To get started, select a database and simply ask: 
 > what tables can you see?
 
-\`[badge]New: \` [Q&A directly on Dashboards](https://minusx.ai/blog/dashboard-qa)!
+\`[badge]New: \` **[GUI Question Builder](https://minusx.ai/blog/mbql/)!**
+[![img](https://minusx.ai/app_assets/mbql_gif.gif)](https://minusx.ai/blog/mbql/)
 
 `,
 };
