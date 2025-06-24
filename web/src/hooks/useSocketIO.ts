@@ -40,10 +40,11 @@ export function useSocketIO({
       },
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 10000,
       transports: ['polling'],
       timeout: 20000,
-      path: configs.SOCKET_ENDPOINT
+      path: configs.SOCKET_ENDPOINT,
+      forceNew: true  // Force new connection to prevent reusing stale connections
     });
 
     socketRef.current = socket;
