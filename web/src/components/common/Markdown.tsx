@@ -3,7 +3,7 @@ import MarkdownComponent from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './ChatContent.css'
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { Image } from "@chakra-ui/react"
+import { Image, Box, Button, Collapse } from "@chakra-ui/react"
 import { useSelector } from 'react-redux'
 import { RootState } from '../../state/store'
 import { renderString } from '../../helpers/templatize'
@@ -13,6 +13,8 @@ import { processSQLWithCtesOrModels } from '../../helpers/catalogAsModels'
 import { getAllTemplateTagsInQuery, replaceLLMFriendlyIdentifiersInSqlWithModels } from 'apps'
 import type { MetabaseModel } from 'apps/types'
 import { Badge } from "@chakra-ui/react";
+import { CodeBlock } from './CodeBlock';
+import { BiChevronDown, BiChevronRight } from 'react-icons/bi';
 
 
 function LinkRenderer(props: any) {
@@ -49,13 +51,15 @@ function HorizontalLine() {
 
 function ModifiedPre(props: any) {
     return (
-        <pre style={{backgroundColor: '#333', padding: '10px', borderRadius: '5px', color: "#fff", fontWeight: '800', fontSize: '0.9em', whiteSpace: 'break-spaces' }} className="code">
+        <pre style={{fontSize: '0.9em', whiteSpace: 'break-spaces', margin: '0px'}} className="code">
             {props.children}
         </pre>
     )
 }
 
 function ModifiedCode(props: any) {
+    const [isOpen, setIsOpen] = useState(true);
+    
     if (!props.className) { // inline code
         const text = props.children?.toString() || '';
         
@@ -67,7 +71,25 @@ function ModifiedCode(props: any) {
         }
     }
     
-    return <code className={props.className} {...props}>{props.children}</code>;
+    // For code blocks, wrap in collapsible component
+    return (
+        <Box>
+            <Button
+                onClick={() => setIsOpen(!isOpen)}
+                size="xs"
+                variant="solid"
+                my={1}
+                colorScheme="minusxGreen"
+                border={"1px solid #eee"}
+                rightIcon={<span>{isOpen ? <BiChevronDown/> : <BiChevronRight/>}</span>}
+            >
+                {isOpen ? 'Hide' : 'Show'} SQL Code
+            </Button>
+            <Collapse in={isOpen} animateOpacity>
+                <CodeBlock code={props.children?.toString() || ''} tool='metabase' language='sql'/>
+            </Collapse>
+        </Box>
+    );
 };
 
 function ModifiedBlockquote(props: any) {

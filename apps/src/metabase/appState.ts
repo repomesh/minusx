@@ -7,17 +7,18 @@ import { isDashboardPageUrl } from "./helpers/dashboard/util";
 import { isMBQLPageUrl } from "./helpers/mbql/utils";
 import { cloneDeep, get, isEmpty, memoize, times } from "lodash";
 import { DOMQueryMapResponse } from "extension/types";
-import { subscribe, GLOBAL_EVENTS, captureEvent } from "web";
+import { subscribe, setInstructions, dispatch } from "web";
 import { getRelevantTablesForSelectedDb } from "./helpers/getDatabaseSchema";
 import { getDatabaseTablesAndModelsWithoutFields, getDatabaseInfo } from "./helpers/metabaseAPIHelpers";
 import { querySelectorMap } from "./helpers/querySelectorMap";
 import { getSelectedDbId } from "./helpers/metabaseStateAPI";
 import { abortable, createRunner, handlePromise } from "../common/utils";
-import { getTableData } from "../package";
+
 const runStoreTasks = createRunner()
 const explainSQLTasks = createRunner()
+const highlightTasks = createRunner()
 
-const metabaseStyles = `
+const getBaseStyles = () => `
   .minusx_style_error_button {
     background-color: #519ee4;
     color: white;
@@ -59,6 +60,59 @@ const metabaseStyles = `
   }
   .minusx_style_absolute_container {
     position: absolute;
+  }
+`;
+
+const getHighlightStyles = () => `
+  /* Highlight button styles */
+  .cm-selectionLayer {
+    z-index: 2 !important;
+  }
+  div.cm-selectionLayer > div.cm-selectionBackground {
+    background: rgba(203, 226, 247, 0.5) !important;
+  }
+  .cm-selectionLayer span {
+    display: none;
+  }
+  .cm-selectionLayer span:nth-child(1) {
+    display: block;
+  }
+  .ace_marker-layer {
+    z-index: 2 !important;
+    pointer-events: auto !important;
+  }
+  .ace_marker-layer:empty {
+    display: none !important;
+  }
+  div.ace_marker-layer > div.ace_selection {
+    background: rgba(203, 226, 247, 0.5) !important;
+  }
+
+  .ace_layer > .ace_selection > .minusx_highlight_button {
+    display: none;
+  }
+
+  .ace_layer > .ace_selection:last-of-type > .minusx_highlight_button {
+    display: block;
+  }
+
+  .cm-selectionLayer > .cm-selectionBackground > .minusx_highlight_button {
+    display: none;
+  }
+
+  .cm-selectionLayer > .cm-selectionBackground:last-of-type > .minusx_highlight_button {
+    display: block;
+  }
+
+  #explain-snippet {
+    background-color: #519ee4;
+    color: white;
+    cursor: pointer;
+  }
+  #modify-snippet {
+    background-color: #519ee4;
+    color: white;
+    cursor: pointer;
   }
 `;
 
@@ -123,6 +177,116 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
         })
       }
     })
+
+    const appSettings = await RPCs.getAppSettings()
+    const enableHighlightHelpers = appSettings.enable_highlight_helpers
+
+    if (enableHighlightHelpers) {
+      const explainButtonJSON = {
+      tag: 'div',
+      attributes: {
+        style: 'position: absolute; bottom: -10px; z-index: 5;',
+        class: 'minusx_highlight_button'
+      },
+      children: [{
+        tag: 'button',
+        attributes: {
+          style: 'position: absolute; opacity: 1; font-weight: bold; padding: 5px 10px; border-radius: 5px; cursor: pointer; border-radius: 5px; width: 100px;',
+          id: 'explain-snippet'
+        },
+        children: ['🔎 Explain']
+      }]
+    }
+
+    const modifyButtonJSON = {
+      tag: 'div',
+      attributes: {
+        style: 'position: absolute; bottom: -10px; z-index: 5;',
+        class: 'minusx_highlight_button'
+      },
+      children: [{
+        tag: 'button',
+        attributes: {
+          style: 'position: absolute; opacity: 1; font-weight: bold; padding: 5px 10px; border-radius: 5px; cursor: pointer; border-radius: 5px; width: 100px; left: 105px;',
+          id: 'modify-snippet'
+        },
+        children: ['🪄 Modify']
+      }]
+    }
+
+      await RPCs.addNativeElements({
+        type: 'CSS',
+        selector: '.cm-selectionBackground:last-of-type',
+      }, explainButtonJSON);
+      await RPCs.addNativeElements({
+        type: 'CSS',
+        selector: '.ace_selection:last-of-type',
+      }, explainButtonJSON);
+
+      await RPCs.addNativeElements({
+        type: 'CSS',
+        selector: '.cm-selectionBackground:last-of-type',
+      }, modifyButtonJSON);
+      await RPCs.addNativeElements({
+        type: 'CSS',
+        selector: '.ace_selection:last-of-type',
+      }, modifyButtonJSON);
+
+      let _currentlySelectedText = '';
+      await subscribe({
+        editor: {
+        selector: {
+          type: "CSS",
+          selector: ".minusx_highlight_button"
+        },
+        attrs: ["text"],
+      },
+      }, ({elements, url}) => {
+        highlightTasks(async (taskStatus) => {
+          const selectedText = await RPCs.getSelectedTextOnEditor() as string;
+          if (selectedText && !isEmpty(selectedText)) {
+            _currentlySelectedText = selectedText;
+          }
+        })
+      })
+
+
+      addNativeEventListener({
+        type: "CSS",
+        selector: 'button#explain-snippet'
+      }, async (event) => {
+        const selectedText = _currentlySelectedText;
+        RPCs.toggleMinusXRoot('closed', false)
+        RPCs.addUserMessage({
+          content: {
+            type: "DEFAULT",
+            text: `explain the highlighted SQL snippet: 
+                  \`\`\`
+                  ${selectedText}
+                  \`\`\`
+                  `,
+            images: []
+          },
+        });
+
+      }, ['mousedown'])
+      
+      addNativeEventListener({
+        type: "CSS",
+        selector: 'button#modify-snippet'
+      }, async (event) => {
+          const selectedText = _currentlySelectedText;
+          RPCs.toggleMinusXRoot('closed', false)
+          dispatch(setInstructions(`Modify only this snippet of the SQL query: 
+\`\`\`
+${selectedText}
+\`\`\`
+---
+Here's what I need modified:
+
+`));
+      }, ['mousedown'])
+    }
     
     // Listen to clicks on Error Message
     const nonceElement = await RPCs.queryDOMSingle({
@@ -142,7 +306,7 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
         class: 'minusx-metabase-styles',
         nonce: nonceValue,
       },
-      children: [metabaseStyles]
+      children: [getBaseStyles() + (enableHighlightHelpers ? getHighlightStyles() : '')]
     });
     const errorMessageSelector = querySelectorMap['error_message_head']
     const uniqueID = await RPCs.addNativeElements(errorMessageSelector, {
