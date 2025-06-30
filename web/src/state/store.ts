@@ -2,7 +2,7 @@ import { Action, combineReducers, configureStore, createListenerMiddleware } fro
 import chat, { initialUserConfirmationState, initialTasks, getID } from './chat/reducer'
 import auth from './auth/reducer'
 import thumbnails from './thumbnails/reducer'
-import settings, { DEFAULT_TABLES } from './settings/reducer'
+import settings, { DEFAULT_TABLES, DEFAULT_MINUSXMD } from './settings/reducer'
 import { ContextCatalog } from '../helpers/utils'
 import storage from 'redux-persist/lib/storage'
 import { persistReducer, createMigrate } from 'redux-persist'
@@ -404,12 +404,18 @@ const migrations = {
     let newState = {...state}
     newState.settings.selectedModels = newState.settings.selectedModels.filter((model) => model.dbId !== undefined)
     return newState
+  },
+  36: (state: RootState) => {
+    let newState = {...state}
+    newState.settings.aiRules = DEFAULT_MINUSXMD
+    newState.settings.useMemory = true
+    return newState
   }
 }
 
 const persistConfig = {
   key: 'root',
-  version: 35,
+  version: 36,
   storage,
   blacklist: ['billing', 'cache'],
   // @ts-ignore
