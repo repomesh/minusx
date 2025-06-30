@@ -8,6 +8,7 @@ import Settings from './Settings'
 import { configs } from '../../constants';
 import { Context } from './Context';
 import { MinusXMD } from './Memory';
+import CSSCustomization from './CSSCustomization';
 
 const Monitors: MonitorDef[] = [
   {
@@ -24,6 +25,10 @@ const Monitors: MonitorDef[] = [
     title: "Memory",
     component: MinusXMD,
     tags: ['production']
+  },
+  {
+    title: "CSS Customization",
+    component: CSSCustomization,
   },
   {
     title: "Dev Context",
