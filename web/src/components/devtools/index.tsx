@@ -23,6 +23,7 @@ const Monitors: MonitorDef[] = [
   {
     title: "Memory",
     component: MinusXMD,
+    tags: ['production']
   },
   {
     title: "Dev Context",
