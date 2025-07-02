@@ -6,7 +6,6 @@
  */
 
 import { memoize, RPCs, processMetadata } from 'web';
-import type { MetadataItem } from 'web/types';
 import {
   type APIConfig,
   DEFAULT_CACHE_TTL,
@@ -168,6 +167,7 @@ export function createAPI<T extends Record<string, any>, >(
         
         // Separate body params from URL params
         const bodyParams: Record<string, any> = {};
+        
         for (const [key, value] of Object.entries(params)) {
           if (!usedKeys.has(key)) {
             bodyParams[key] = value;
@@ -203,6 +203,5 @@ export function createAPI<T extends Record<string, any>, >(
     } : undefined
   );
 
-  // Return the callable function
   return memoizedFetch;
 }
