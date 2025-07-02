@@ -1,4 +1,4 @@
-import { addNativeEventListener, RPCs, configs, renderString, getParsedIframeInfo, unsubscribe } from "web";
+import { addNativeEventListener, RPCs, configs, renderString, getParsedIframeInfo, unsubscribe, captureEvent, GLOBAL_EVENTS } from "web";
 import { DefaultAppState } from "../base/appState";
 import { MetabaseController } from "./appController";
 import { DB_INFO_DEFAULT, metabaseInternalState } from "./defaultState";
@@ -124,6 +124,18 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
   public async setup() {
     const state = this.useStore().getState();
     const whitelistQuery = state.whitelistQuery
+    RPCs.getMetabaseState('settings.values').then(settings => {
+      const payload = {
+        version: get(settings, 'last-acknowledged-version', 'unknown'),
+        adminEmail: get(settings, 'admin-email', 'unknown'),
+        siteUrl: get(settings, 'site-url', 'unknown'),
+        latestVersion: get(settings, 'version-info.latest.version', 'unknown'),
+      }
+      captureEvent(GLOBAL_EVENTS.metabase_settings, payload);
+      console.log('Metabase settings:', payload);
+    }).catch((e) => {
+      console.error('Failed to get Metabase settings:', e);
+    })
     if (!whitelistQuery) {
       return
     }
