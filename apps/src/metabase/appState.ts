@@ -130,6 +130,7 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
         adminEmail: get(settings, 'admin-email', 'unknown'),
         siteUrl: get(settings, 'site-url', 'unknown'),
         latestVersion: get(settings, 'version-info.latest.version', 'unknown'),
+        latestPatched: get(settings, 'version-info.latest.patch', 'unknown'),
       }
       captureEvent(GLOBAL_EVENTS.metabase_settings, payload);
       console.log('Metabase settings:', payload);
