@@ -14,6 +14,7 @@ import semanticLayer from './semantic-layer/reducer'
 import { catalogsListener } from './settings/availableCatalogsListener'
 import cache from './cache/reducer'
 import notifications from './notifications/reducer'
+import { userStateApi } from '../app/api/userStateApi'
 import { get } from 'lodash'
 
 const combinedReducer = combineReducers({
@@ -24,7 +25,8 @@ const combinedReducer = combineReducers({
   billing,
   semanticLayer,
   cache,
-  notifications
+  notifications,
+  [userStateApi.reducerPath]: userStateApi.reducer
 });
 
 const rootReducer = (state: any, action: any) => {
@@ -425,14 +427,19 @@ const migrations = {
     let newState = {...state}
     newState.settings.enableUserDebugTools = false
     return newState
+  },
+  40: (state: RootState) => {
+    let newState = {...state}
+    newState.settings.enableReviews = false
+    return newState
   }
 }
 
 const persistConfig = {
   key: 'root',
-  version: 39,
+  version: 40,
   storage,
-  blacklist: ['billing', 'cache'],
+  blacklist: ['billing', 'cache', userStateApi.reducerPath],
   // @ts-ignore
   migrate: createMigrate(migrations, { debug: true }),
 };
@@ -451,6 +458,7 @@ export const store = configureStore({
       .prepend(eventListener.middleware)
       .prepend(plannerListener.middleware)
       .prepend(catalogsListener.middleware)
+      .concat(userStateApi.middleware)
     if (configs.IS_DEV) {
       return withPlannerAndCatalogListener.concat(logger)
     }
