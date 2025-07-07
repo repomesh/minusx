@@ -68,6 +68,7 @@ export interface MetabaseAppStateSQLEditor {
   outputTableMarkdown: string
   visualizationSettings: visualizationSettings,
   metabaseOrigin?: string;
+  metabaseUrl?: string;
   isEmbedded: boolean;
 }
 
@@ -77,6 +78,7 @@ export interface MetabaseAppStateDashboard extends DashboardInfo {
   tableContextYAML?: Record<string, any>;
   selectedDatabaseInfo?: ExtractedDataBase;
   metabaseOrigin?: string;
+  metabaseUrl?: string;
   isEmbedded: boolean;
 }
 
@@ -85,6 +87,7 @@ export interface MetabaseAppStateMBQLEditor extends MBQLInfo {
   tableContextYAML?: Record<string, any>;
   selectedDatabaseInfo?: ExtractedDataBase;
   metabaseOrigin?: string;
+  metabaseUrl?: string;
   isEmbedded: boolean;
 }
 
@@ -106,7 +109,8 @@ export type MetabaseAppState = MetabaseAppStateSQLEditor | MetabaseAppStateDashb
 export async function convertDOMtoStateSQLQuery() {
   // CAUTION: This one does not update when changed via ui for some reason
   // const dbId = _.get(hashMetadata, 'dataset_query.database');
-  const url = new URL(await RPCs.queryURL()).origin;
+  const fullUrl = await RPCs.queryURL();
+  const url = new URL(fullUrl).origin;
   const availableDatabases = (await getDatabases())?.data?.map(({ name }) => name);
   const dbId = await getSelectedDbId();
   const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined;
@@ -161,6 +165,7 @@ export async function convertDOMtoStateSQLQuery() {
     visualizationSettings,
     sqlVariables,
     metabaseOrigin: url,
+    metabaseUrl: fullUrl,
     isEmbedded: getParsedIframeInfo().isEmbedded,
   };
   if (appSettings.drMode) {
