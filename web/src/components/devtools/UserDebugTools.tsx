@@ -10,7 +10,17 @@ const useAppStore = getApp().useStore()
 
 
 const downloadState = async (pageType: string) => {
-    const state = await getApp().getState();
+    let state = await getApp().getState();
+    const entities = get(state, 'tableContextYAML.entities', []);
+    if (entities.length > 0) {
+        set(state, 'tableContextYAML.entities', entities.map((entity: any) => {
+            entity.dimensions = entity.dimensions.map((dimension: any) => {
+                const { sample_values, ...rest } = dimension;
+                return rest;
+            })
+            return entity
+        }))
+    }
     if (pageType === 'dashboard') {
         if (state.cards) {
             state.cards = state.cards.map((card: any) => {
@@ -20,17 +30,7 @@ const downloadState = async (pageType: string) => {
                 }
                 return card;
             })
-        }
-        const entities = get(state, 'tableContextYAML.entities', []);
-        if (entities.length > 0) {
-            set(state, 'tableContextYAML.entities', entities.map((entity: any) => {
-                entity.dimensions = entity.dimensions.map((dimension: any) => {
-                    const { sample_values, ...rest } = dimension;
-                    return rest;
-                })
-                return entity
-            }))
-        }
+        } 
 
         const dashboardState = await getDashboardState();
         if (dashboardState && dashboardState.dashcardData) {
@@ -43,6 +43,10 @@ const downloadState = async (pageType: string) => {
             });
             state.rawDashboardState = dashboardState;
         }
+    }
+    else if (pageType === 'sql') {
+        const { outputTableMarkdown, ...rest } = state;
+        state = rest;
     }
     const content = JSON.stringify(state, null, 2)
     const blob = new Blob([content], { type: "application/json" })
