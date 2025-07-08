@@ -66,15 +66,16 @@ export async function calculateMetadataHash(metadataType: string, metadataValue:
 }
 
 /**
- * Uploads cards metadata to the backend using processMetadata
- * @param cards The cards data to upload
+ * Generic function to upload any metadata type to the backend
+ * @param metadataType The type of metadata (e.g., 'cards', 'dbSchema')
+ * @param data The data to upload
  * @param metadataHash The calculated hash to send to server
  * @returns The hash returned from the server
  */
-export async function uploadCardsMetadata(cards: any, metadataHash: string): Promise<string> {
+export async function uploadMetadata(metadataType: string, data: any, metadataHash: string): Promise<string> {
   const metadataItem: MetadataItem = {
-    metadata_type: 'cards',
-    metadata_value: { cards },
+    metadata_type: metadataType,
+    metadata_value: { [metadataType]: data },
     version: '1.0',
     metadata_hash: metadataHash
   };
@@ -84,7 +85,21 @@ export async function uploadCardsMetadata(cards: any, metadataHash: string): Pro
     const hash = get(response, 'results[0].metadata_hash')
     return hash
   } catch (error) {
-    console.warn('Failed to upload cards metadata:', error);
+    console.warn(`Failed to upload ${metadataType} metadata:`, error);
     throw error;
   }
+}
+
+/**
+ * Uploads cards metadata (convenience wrapper)
+ */
+export async function uploadCardsMetadata(cards: any, metadataHash: string): Promise<string> {
+  return uploadMetadata('cards', cards, metadataHash);
+}
+
+/**
+ * Uploads database schema metadata (convenience wrapper)
+ */
+export async function uploadDBSchemaMetadata(dbSchemaData: any, metadataHash: string): Promise<string> {
+  return uploadMetadata('dbSchema', dbSchemaData, metadataHash);
 }
