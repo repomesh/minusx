@@ -25,7 +25,7 @@ function LinkRenderer(props: any) {
   );
 }
 
-const processRogueParagraphs = (text: string) => {
+const processRogueParagraphs = (text: string | string[]) => {
     const badgeTypes = [
         { tag: '[badge_mx]Sources', label: 'Sources' },
         { tag: '[badge_mx]Logic', label: 'Logic' },
@@ -37,6 +37,7 @@ const processRogueParagraphs = (text: string) => {
     
     for (const badge of badgeTypes) {
         if (processedText.includes(badge.tag)) {
+          if (typeof processedText === 'string') {
             const parts = processedText.split(badge.tag);
             if (parts[0]) resultElements.push(parts[0]);
             // Add a line break before each badge
@@ -47,6 +48,7 @@ const processRogueParagraphs = (text: string) => {
                 </Badge>
             );
             processedText = parts[1];
+          }
         }
     }
     
