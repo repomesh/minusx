@@ -171,6 +171,28 @@ function ProviderApp() {
     const ref = useRef<HTMLInputElement>(null)
     const activeThread = useSelector((state: RootState) => state.chat.threads[state.chat.activeThread])
     init(mode, ref, isAppOpen)
+    
+    useEffect(() => {
+        const iframeInfo = getParsedIframeInfo()
+        if (iframeInfo.isEmbedded && iframeInfo.origin) {
+            const linkId = 'minusx-embedded-css'
+            const existingLink = document.getElementById(linkId)
+            if (!existingLink) {
+                const link = document.createElement('link')
+                link.id = linkId
+                link.rel = 'stylesheet'
+                link.href = `${iframeInfo.origin}/minusx.css`
+                document.head.appendChild(link)
+            }
+            
+            return () => {
+                const link = document.getElementById(linkId)
+                if (link) {
+                    document.head.removeChild(link)
+                }
+            }
+        }
+    }, [])
     useInitArgs(() => {
         if (session_jwt) {
             setAxiosJwt(session_jwt) 
