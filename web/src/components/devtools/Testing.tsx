@@ -62,6 +62,7 @@ export const Testing: React.FC<null> = () => {
     let response
     try {
       response = await fetchData(endpoint, method);
+      console.log('Test API Response is', response);
     } catch {}
     if (response) {
       setApiBody(response)
