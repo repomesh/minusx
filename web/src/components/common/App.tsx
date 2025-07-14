@@ -229,6 +229,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
       height="100%"
       gap={0}
       backgroundColor={"minusxBW.200"}
+      aria-label="chat-container"
       borderColor={"minusxBW.200"}
       borderWidth={1.5}
       borderLeftColor={"minusxBW.500"}
@@ -242,11 +243,11 @@ const AppLoggedIn = forwardRef((_props, ref) => {
           justifyContent={'space-between'}
           paddingBottom={2}
         >
-          <VStack alignItems={'start'} spacing={0} paddingLeft={1}>
+          <VStack aria-label="mx-logos" alignItems={'start'} spacing={0} paddingLeft={1}>
             <Image src={logo} alt="MinusX" maxWidth='150px'/>
             <MXMode />
           </VStack>
-          <HStack>
+          <HStack aria-label="mx-controls">
             <Tooltip hasArrow label="Start New Chat" placement='bottom' borderRadius={5} openDelay={500}>
               <IconButton
                 variant={'ghost'}
@@ -294,7 +295,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
       {sidePanelTabName === 'chat' ? <TaskUI ref={ref} /> : null}
       {/* {sidePanelTabName === 'context' ? <AdditionalContext /> : null} */}
       {/* {sidePanelTabName === 'settings' ? <Settings /> : null} */}
-      <HStack justifyContent="space-between" alignItems="center" width="100%" py="1">
+      <HStack justifyContent="space-between" alignItems="center" width="100%" py="1" aria-label="app-footer">
         {/* {configs.IS_DEV ? <DevToolsToggle size={"micro"}/> : null} */}
         { !isSheets && <DevToolsToggle size={"micro"}/>}
         { !isSheets && <Text fontSize="xs" color="minusxGreen.800" fontWeight={"bold"}>{platformShortcut} to toggle</Text>}

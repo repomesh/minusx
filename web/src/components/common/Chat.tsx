@@ -185,7 +185,7 @@ const HelperMessage = () => {
     return null
   }
   // return <Chat role='user' index={-1} content={{type: 'DEFAULT', text: helperMessage, images: []}} />
-  return <SettingsBlock title={"Welcome"}><Markdown content={helperMessage}/></SettingsBlock>
+  return <SettingsBlock title={"Welcome"} ariaLabel="welcome-message"><Markdown content={helperMessage}/></SettingsBlock>
 
 }
 

@@ -533,7 +533,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
             </Notify>
         }
         {   !taskInProgress &&
-            <SettingsBlock title='Quick Actions'>
+            <SettingsBlock title='Quick Actions' ariaLabel='quick-actions'>
                 <HStack justifyContent={"center"} flexWrap={"wrap"} gap={1}>
                 { currentTool == 'metabase' && <Button size="xs" leftIcon={<BiBookBookmark size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://docs.minusx.ai/en/collections/10790008-minusx-in-metabase" target="_blank">Docs</Button> }
                 { currentTool == 'metabase'  && <Button size="xs" leftIcon={<BiTable size={14}/>} colorScheme="minusxGreen" variant="solid" onClick={()=>openDevtoolTab("Context")}>Context</Button> }
@@ -556,6 +556,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
           borderRadius={"8px 8px 0px 0px"} 
           justifyContent={"space-between"} 
           bg={"rgba(20, 160, 133, 0.05)"}
+          aria-label="context-info"
           border={"1px solid"}
           borderColor={"minusxGreen.600"}
           gap={0}

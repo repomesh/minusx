@@ -10,8 +10,8 @@ const SettingsHeader = ({ text }: { text: string }) => (
   </Box>
 )
 
-export const SettingsBlock = ({title, children}: {title: string, children: React.ReactNode}) => (
-  <VStack borderRadius={10} bg="minusxBW.300" alignItems={"stretch"} padding={3}>
+export const SettingsBlock = ({title, ariaLabel, children}: {title: string, ariaLabel?: string, children: React.ReactNode}) => (
+  <VStack borderRadius={10} bg="minusxBW.300" alignItems={"stretch"} padding={3} aria-label={ariaLabel}>
     <SettingsHeader text={title} />
     {children}
   </VStack>

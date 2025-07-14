@@ -327,7 +327,7 @@ export const Tasks: React.FC = () => {
      }
     return (
         <>
-      <VStack align="stretch" spacing={0} p={isModal ? 0 : 2} background={'minusxBW.200'} borderRadius={5}>
+      <VStack align="stretch" spacing={0} p={isModal ? 0 : 2} background={'minusxBW.200'} borderRadius={5} aria-label="tasks-tree">
         {rootTasks.map((rootTask) => (
           <TreeNode
              key={`${rootTask.id}-${isModal ? 'modal' : 'panel'}`}
@@ -378,6 +378,7 @@ export const Tasks: React.FC = () => {
           bg={'minusxBW.300'}
           p={2}
           borderRadius={5}
+          aria-label="tasks-panel-content"
           color={'minusxBW.600'}
           width={"100%"}
           maxH="45vh"
