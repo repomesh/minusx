@@ -219,7 +219,7 @@ const SettingsPage = () => {
             <Text color={"minusxBW.800"} fontSize="sm">Agent Mode</Text>
             <Switch color={"minusxBW.800"} colorScheme='minusxGreen' size='md' isChecked={drMode} onChange={(e) => updateDRMode(e.target.checked)} />
           </HStack>
-          {(configs.IS_DEV || userState?.flags?.showAnalystMode) && drMode && <HStack justifyContent={"space-between"}>
+          {drMode && <HStack justifyContent={"space-between"}>
             <Text color={"minusxBW.800"} fontSize="sm">Analyst Mode</Text>
             <Switch color={"minusxBW.800"} colorScheme='minusxGreen' size='md' isChecked={analystMode} onChange={(e) => updateAnalystMode(e.target.checked)} />
           </HStack>}
