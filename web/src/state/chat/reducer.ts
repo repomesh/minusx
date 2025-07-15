@@ -382,6 +382,7 @@ export const chatSlice = createSlice({
     startNewThread: (state) => {
       // Clear existing tasks
       state.threads[state.activeThread].tasks = []
+      state.threads[state.threads.length - 1].tasks = []
       if (state.threads.length >= MAX_THREADS) {
         const excessThreads = state.threads.length - MAX_THREADS + 1;
         state.threads.splice(0, excessThreads);
