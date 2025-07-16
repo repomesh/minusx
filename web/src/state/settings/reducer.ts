@@ -154,7 +154,7 @@ const initialState: Settings = {
   },
   selectedModels: [],
   drMode: true,
-  analystMode: false,
+  analystMode: true,
   selectedCatalog: DEFAULT_TABLES,
   availableCatalogs: [],
   users: {},
