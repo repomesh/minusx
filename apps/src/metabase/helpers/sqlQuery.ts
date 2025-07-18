@@ -127,24 +127,28 @@ export const getSnippetsInQuery = (query: string, allSnippets: MetabaseStateSnip
 }
 
 export const getModelsInQuery = (query: string) => {
-  // it looks like {{#{modelNumber}-{modelSlug}}}
-  const regex = /{{(\s*#(\d+)-([\w-]+)\s*)}}/g;
+  // Matches tags like {{#1014-Published-Reels-Shows-Databricks}}
+  const regex = /{{\s*#(\d+)-([A-Za-z0-9\-]+)\s*}}/g;
+
   let match;
-  let tags: ModelTemplateTag[] = [];
+  const tags: ModelTemplateTag[] = [];
+
   while ((match = regex.exec(query)) !== null) {
-    // extract all three parts; the full match, the number, and the slug
-    const [, fullMatch, modelNumber, slug] = match;
+    const [fullMatch, modelNumber, slug] = match;
+    const name = fullMatch.trim().slice(2, -2).trim()
+
     tags.push({
       "card-id": parseInt(modelNumber),
       "display-name": slugToDisplayName(slug),
       id: uuidv4(),
-      name: fullMatch,
+      name,
       type: "card"
-    })
+    });
   }
-  // convert to dictionary with name as key
-  return Object.fromEntries(tags.map(tag => [tag.name, tag]))
-}
+
+  // Return as dictionary with full tag (e.g. "{{#1014-slug}}") as key
+  return Object.fromEntries(tags.map(tag => [tag.name, tag]));
+};
 
 export const getAllTemplateTagsInQuery = (query: string, allSnippets?: MetabaseStateSnippetsDict) => {
   const snippetTags = allSnippets ? getSnippetsInQuery(query, allSnippets) : {};

@@ -75,6 +75,13 @@ export const ACTION_DESCRIPTIONS_PLANNER: ActionDescription[] = [
     `,
   },
   {
+    name: 'ExecuteQuery',
+    args: {
+    },
+    description: `Executes the SQL query in the metabase SQL editor. This also sets the "queryExecuted" state to true after execution.
+    `,
+  },
+  {
     name: 'setVisualizationType',
     args: {
       visualization_type: {
