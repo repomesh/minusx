@@ -10,20 +10,28 @@ import {
   Button,
   Link,
   Box,
-  Flex
+  Flex,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Portal,
+
 } from '@chakra-ui/react'
 import logo from '../../assets/img/logo.svg'
 import React, { forwardRef, useEffect, useState } from 'react'
 import {DevToolsToggle} from '../devtools/Settings'
 import TaskUI from './TaskUI'
-import { BiCog, BiMessage, BiMessageAdd, BiFolder, BiFolderOpen, BiSolidLockAlt, BiSolidStar, BiSolidRocket } from 'react-icons/bi'
+import { BiCog, BiMessage, BiMessageAdd, BiFolder, BiFolderOpen, BiSolidLockAlt, BiSolidStar, BiSolidRocket, BiChevronDown, BiSolidMapAlt, BiCode, BiSolidBusiness } from 'react-icons/bi'
+import { BsFillPatchQuestionFill } from "react-icons/bs";
+
 import { useSelector } from 'react-redux'
 import { login, register } from '../../state/auth/reducer'
 import { dispatch, logoutState } from '../../state/dispatch'
 import {auth as authModule} from '../../app/api'
 import Auth from './Auth'
 import _, { attempt } from 'lodash'
-import { updateAppMode } from '../../state/settings/reducer'
+import { updateAppMode, setAnalystMode, setDRMode } from '../../state/settings/reducer'
 import { DevToolsBox } from '../devtools';
 import { RootState } from '../../state/store'
 import { getPlatformShortcut } from '../../helpers/platformCustomization'
@@ -37,6 +45,16 @@ import { Markdown } from './Markdown'
 import { setMinusxMode, toggleMinusXRoot } from '../../app/rpc'
 import { configs } from '../../constants'
 import { abortPlan, startNewThread, updateThreadID } from '../../state/chat/reducer'
+
+// Agent constants
+const AGENTS = {
+  EXPLORER: 'Explorer Agent',
+  SIMPLE: 'Simple Agent', 
+  KPI: 'KPI Agent',
+  CLASSIC: 'Classic [DEPRECATED]'
+} as const
+
+type AgentType = typeof AGENTS[keyof typeof AGENTS]
 import { toast } from '../../app/toast'
 import { captureEvent, GLOBAL_EVENTS } from '../../tracking'
 import NotificationHandler from './NotificationHandler'
@@ -114,6 +132,7 @@ You can activate the MinusX Sheets add-on from the extensions menu:
   )
 }
 
+
 const AppLoggedIn = forwardRef((_props, ref) => {
   const tool = getParsedIframeInfo().tool
   const toolVersion = getParsedIframeInfo().toolVersion
@@ -128,6 +147,27 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   // Get JWT token for Socket.io authentication
   const sessionJwt = useSelector((state: RootState) => state.auth.session_jwt)
   const analystMode = useSelector((state: RootState) => state.settings.analystMode)
+  const drMode = useSelector((state: RootState) => state.settings.drMode)
+  const currentAgent: AgentType = analystMode ? AGENTS.EXPLORER : drMode ? AGENTS.SIMPLE : AGENTS.CLASSIC
+
+  const agentIconMap: Record<AgentType, any> = {
+    [AGENTS.EXPLORER]: BiSolidMapAlt,
+    [AGENTS.SIMPLE]: BiCode,
+    [AGENTS.KPI]: BiSolidBusiness,
+    [AGENTS.CLASSIC]: BiFolder
+  }
+
+  const handleAgentChange = (agent: AgentType) => {
+    console.log('Agent changed to:', agent)
+    if (agent === AGENTS.EXPLORER) {
+        dispatch(setDRMode(true))
+        dispatch(setAnalystMode(true))
+    }
+    else if (agent === AGENTS.SIMPLE) {
+        dispatch(setDRMode(true))
+        dispatch(setAnalystMode(false))
+    }
+  };
 
   // Disabling sockets for now
   // useSocketIO({
@@ -224,7 +264,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
             { !(subscribed || isEnterpriseCustomer) && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"} title="A taste of what's possible. Great if you're just exploring MinusX to get a feel for the product. Switch to pro for an advanced experience." ><BiSolidLockAlt /> Basic Plan</Link> }
             { subscribed && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidStar /> Pro Plan</Link> }
             {isEnterpriseCustomer && <Link href={"https://minusx.ai/pricing/"} isExternal display={"flex"} fontSize="xs" color="minusxGreen.800" fontWeight={"bold"} alignItems={"center"}><BiSolidRocket /> Enterprise Plan</Link> }
-            { analystMode && <Text fontSize="xs" color="minusxGreen.800" fontWeight={"bold"}>[Explorer Agent]</Text> }
+            {/* { analystMode && <Text fontSize="xs" color="minusxGreen.800" fontWeight={"bold"}>[Explorer Agent]</Text> } */}
         </HStack>
     )
   }
@@ -243,17 +283,17 @@ const AppLoggedIn = forwardRef((_props, ref) => {
       borderLeftColor={"minusxBW.500"}
     >
       <NotificationHandler />
-      <VStack justifyContent="start" alignItems="stretch" width="100%">
-        <HStack
+      <VStack justifyContent="start" alignItems="stretch" width="100%"
           borderBottomColor={'minusxBW.500'}
           borderBottomWidth={1}
           borderBottomStyle={'solid'}
-          justifyContent={'space-between'}
-          paddingBottom={2}
+          paddingBottom={1}
+          gap={0}
         >
+        <HStack justifyContent={'space-between'}>
           <VStack aria-label="mx-logos" alignItems={'start'} spacing={0} paddingLeft={1}>
             <Image src={logo} alt="MinusX" maxWidth='150px'/>
-            <MXMode />
+            {/* <MXMode /> */}
           </VStack>
           <HStack aria-label="mx-controls">
             <Tooltip hasArrow label="Start New Chat" placement='bottom' borderRadius={5} openDelay={500}>
@@ -262,42 +302,50 @@ const AppLoggedIn = forwardRef((_props, ref) => {
                 colorScheme="minusxGreen"
                 aria-label="Chat"
                 size={'sm'}
-                icon={<Icon as={BiMessageAdd} boxSize={5} />}
+                icon={<Icon as={BiMessageAdd} boxSize={6} />}
                 onClick={clearMessages}
               />
             </Tooltip>
-            
-            {/* <Tooltip hasArrow label="Chat" placement='bottom' borderRadius={5} openDelay={500}>
-              <IconButton
-                variant={sidePanelTabName === 'chat' ? 'solid' : 'ghost'}
-                colorScheme="minusxGreen"
-                aria-label="Chat"
-                size={'sm'}
-                icon={<Icon as={BiMessage} boxSize={5} />}
-                onClick={() => dispatch(updateSidePanelTabName('chat'))}
-              />
-            </Tooltip> */}
-            {/* <Tooltip hasArrow label="Additional Context" placement='bottom' borderRadius={5} openDelay={500}>
-              <IconButton
-                variant={sidePanelTabName === 'context' ? 'solid' : 'ghost'}
-                colorScheme="minusxGreen"
-                aria-label="Additional Context"
-                size={'sm'}
-                icon={<Icon as={BiFolderOpen} boxSize={5} />}
-                onClick={() => dispatch(updateSidePanelTabName('context'))}
-              />
-            </Tooltip> */}
-            {/* <Tooltip hasArrow label="Settings" placement='bottom' borderRadius={5} openDelay={500}>
-              <IconButton
-              variant={sidePanelTabName === 'settings' ? 'solid' : 'ghost'}
-              colorScheme="minusxGreen"
-              aria-label="Settings"
-              size={'sm'}
-              icon={<Icon as={BiCog} boxSize={5} />}
-              onClick={() => dispatch(updateSidePanelTabName('settings'))}
-              />
-            </Tooltip> */}
           </HStack>
+        </HStack>
+        <HStack justifyContent={'space-between'} mt={1}>
+            <MXMode />
+            <HStack gap={1} justifyContent={'center'} alignItems={'center'}>
+              {/* <Text fontSize="xs" color={"minusxGreen.600"}><Link width={"100%"} textAlign={"center"} display={"flex"} justifyContent={"center"} alignItems={"center"} href="https://docs.minusx.ai/en/articles/11814763-agents-overview" isExternal><Icon as={BsFillInfoSquareFill} boxSize={3} /></Link></Text> */}
+                <Menu>
+                <MenuButton
+                  as={Button}
+                  variant={'solid'}
+                  colorScheme="minusxGreen"
+                  size={'xs'}
+                  leftIcon={<Icon as={agentIconMap[currentAgent]} boxSize={3} />}
+                  rightIcon={<Icon as={BiChevronDown} boxSize={3} />}
+                  minW="auto"
+                  px={2}
+                  h="20px"
+                //   fontWeight={'bold'}
+                >
+                  {currentAgent}
+                </MenuButton>
+                <Portal>
+                  <MenuList fontSize="sm">
+                    {Object.entries(AGENTS).map(([key, value]) => (
+                        <MenuItem 
+                            key={key}
+                            onClick={() => key !== 'KPI' ? handleAgentChange(value) : undefined}
+                            isDisabled={key === 'KPI' || key === 'CLASSIC'}
+                        >
+                            <Icon as={agentIconMap[value]} mr={2} />
+                            {value}{key === 'KPI' ? " (coming soon!)" : ""}
+                        </MenuItem>
+                    ))}
+                  </MenuList>
+                </Portal>
+                </Menu>
+                <Tooltip hasArrow label="What are MinusX Agents?" placement='bottom' borderRadius={5} openDelay={500}>
+                  <Text fontSize="xs" color={"minusxGreen.600"}><Link width={"100%"} textAlign={"center"} display={"flex"} justifyContent={"center"} alignItems={"center"} href="https://docs.minusx.ai/en/articles/11814763-agents-overview" isExternal><Icon as={BsFillPatchQuestionFill} boxSize={4} /></Link></Text>
+                </Tooltip>
+            </HStack>
         </HStack>
       </VStack>
       {sidePanelTabName === 'chat' ? <TaskUI ref={ref} /> : null}
