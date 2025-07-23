@@ -149,6 +149,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   const analystMode = useSelector((state: RootState) => state.settings.analystMode)
   const drMode = useSelector((state: RootState) => state.settings.drMode)
   const currentAgent: AgentType = analystMode ? AGENTS.EXPLORER : drMode ? AGENTS.SIMPLE : AGENTS.CLASSIC
+  const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
 
   const agentIconMap: Record<AgentType, any> = {
     [AGENTS.EXPLORER]: BiSolidMapAlt,
@@ -190,7 +191,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   // Update thread id on start
   useEffect(() => {
     dispatch(updateThreadID())
-  }, [])
+  }, []) 
 
   useEffect(() => {
     getBillingInfo().then(billingInfo => {
@@ -214,7 +215,7 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   }, [])
   useEffect(() => {
     const attemptRefresh = () => {
-      if (configs.IS_DEV) {
+      if (configs.IS_DEV || isEmbedded) {
         return
       }
       authModule.refresh().then(({ expired, changed, session_jwt, profile_id, email }) => {
@@ -246,7 +247,6 @@ const AppLoggedIn = forwardRef((_props, ref) => {
 //   const isDevToolsOpen = useSelector((state: RootState) => state.settings.isDevToolsOpen)
   const platformShortcut = getPlatformShortcut()
   const width = getParsedIframeInfo().width
-  const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
 
   const clearMessages = () => {
     if (taskInProgress) {
