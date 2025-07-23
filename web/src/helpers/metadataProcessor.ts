@@ -12,9 +12,10 @@ import { get, isEmpty } from 'lodash';
 import { MetadataProcessingResult, setMetadataHash, setMetadataProcessingCache, clearMetadataProcessingCache } from '../state/settings/reducer';
 import { getState } from '../state/store';
 import { dispatch } from '../state/dispatch';
-import { getAllCards, getAllCardsLegacy, getDatabaseTablesAndModelsWithoutFields, getAllFields } from '../../../apps/src/metabase/helpers/metabaseAPIHelpers';
+import { getAllCardsAndModels, getAllCardsLegacy, getDatabaseTablesAndModelsWithoutFields, getAllFields } from '../../../apps/src/metabase/helpers/metabaseAPIHelpers';
 import { fetchDatabaseFields } from '../../../apps/src/metabase/helpers/metabaseAPI';
 import { getSelectedDbId } from '../../../apps/src/metabase/helpers/metabaseStateAPI';
+import { getModelsWithFields } from '../../../apps/src/metabase/helpers/metabaseModels';
 
 export interface MetadataItem {
   metadata_type: string;
@@ -200,12 +201,11 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
   const processingPromise = (async () => {
     try {
       
-      const [dbSchema, { cards, tables: referencedTables }, allFields] = await Promise.all([
+      const [dbSchema, { cards, tables: referencedTables, modelFields }, allFields] = await Promise.all([
         getDatabaseTablesAndModelsWithoutFields(selectedDbId, forceRefresh, forceRefresh),
-        getAllCards(forceRefresh),
+        getAllCardsAndModels(forceRefresh),
         forceRefresh ? fetchDatabaseFields.refresh({ db_id: selectedDbId }) : fetchDatabaseFields({ db_id: selectedDbId })
       ])
-      
       console.log('[minusx] All API calls completed. Processing data...')
       
       // Step 2: Create sets for efficient lookup of existing tables
@@ -261,13 +261,15 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
       
       console.log('[minusx] Fields after filtering:', filteredFields.length, 'out of', allFields.length)
       
-      // Step 5: Process metadata for all three with filtered data
+      console.log("[minusx] modelFields: ", modelFields.length)      
+      // Step 5: Process metadata for all four with filtered data
       console.log('[minusx] Processing metadata with filtered data...')
       
-      const [cardsHash, dbSchemaHash, fieldsHash] = await Promise.all([
+      const [cardsHash, dbSchemaHash, fieldsHash, modelFieldsHash] = await Promise.all([
         processMetadataWithCaching('cards', async () => cards),
         processMetadataWithCaching('dbSchema', async () => dbSchema),
-        processMetadataWithCaching('fields', async () => filteredFields)
+        processMetadataWithCaching('fields', async () => filteredFields),
+        processMetadataWithCaching('modelFields', async () => modelFields)
       ])
       
       console.log('[minusx] Coordinated metadata processing complete')
@@ -275,7 +277,8 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
       const result = {
         cardsHash,
         dbSchemaHash, 
-        fieldsHash
+        fieldsHash,
+        modelFieldsHash
       }
   
       // Cache the result for this database ID
