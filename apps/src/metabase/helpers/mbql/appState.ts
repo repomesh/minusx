@@ -7,6 +7,7 @@ import { get, find } from 'lodash';
 import { getTableContextYAML } from '../catalog';
 import { getTablesWithFields } from '../getDatabaseSchema';
 import { getModelsWithFields, getSelectedAndRelevantModels } from '../metabaseModels';
+import { getAndFormatOutputTable } from '../operations';
 
 
 export async function getMBQLAppState(): Promise<MetabaseAppStateMBQLEditor | null> {
@@ -19,8 +20,10 @@ export async function getMBQLAppState(): Promise<MetabaseAppStateMBQLEditor | nu
   const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined
   const defaultSchema = selectedDatabaseInfo?.default_schema;
   const mbqlState = await getMBQLState();
+  const outputTableMarkdown = await getAndFormatOutputTable()
   const mbqlInfo: MBQLInfo = {
-    mbqlQuery: mbqlState.dataset_query.query
+    mbqlQuery: mbqlState.dataset_query.query,
+    outputTableMarkdown
   }
   
   const sourceTableModelIds = getSourceTableIds(mbqlState?.dataset_query?.query);

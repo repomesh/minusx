@@ -77,6 +77,7 @@ interface MBQLQuery {
 
 export interface MBQLInfo {
     mbqlQuery: MBQLQuery;
+    outputTableMarkdown: string
 }
 
 
