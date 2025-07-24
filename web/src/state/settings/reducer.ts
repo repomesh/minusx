@@ -175,7 +175,7 @@ const initialState: Settings = {
   metadataHashes: {},
   metadataProcessingCache: {},
   manuallyLimitContext: false,
-  useV2States: false
+  useV2States: true
 }
 
 export const settingsSlice = createSlice({
