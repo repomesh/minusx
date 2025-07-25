@@ -190,7 +190,8 @@ const AppLoggedIn = forwardRef((_props, ref) => {
 
   // Update thread id on start
   useEffect(() => {
-    dispatch(updateThreadID())
+    // dispatch(updateThreadID())
+    dispatch(startNewThread())
   }, []) 
 
   useEffect(() => {
