@@ -21,7 +21,7 @@ import { CodeBlock } from './CodeBlock';
 import { ActionRenderInfo } from '../../state/chat/types';
 import { Markdown } from './Markdown';
 import {processModelToUIText} from '../../helpers/utils';
-import { get, isEmpty } from 'lodash';
+import { get, isEmpty, last } from 'lodash';
 
 // Todo: Vivek: Hardcoding here, need to fix this later
 // This is a list of actions that are undo/redoable
@@ -280,7 +280,10 @@ const PlanningActionStack: React.FC = () => {
   const metadataProcessingCache = useSelector((state: RootState) => state.settings.metadataProcessingCache)
   const isAnalystmode = useSelector((state: RootState) => state.settings.analystMode) || false;
   const dbMetadata = get(metadataProcessingCache, [dbId, 'result'], null);
-  const planningActions = isEmpty(dbMetadata) && isAnalystmode? ['One time optimizations underway'] : ['Planning next steps', 'Thinking about the question', 'Understanding App state', 'Finalizing Actions', 'Validating Answers']
+  
+  const planningActions = isEmpty(dbMetadata) && isAnalystmode
+      ? ['One time optimizations underway']
+      : ['Planning next steps', 'Thinking about the question', 'Understanding App state', 'Finalizing Actions', 'Validating Answers']
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
   useEffect(() => {
     const intervalId = setInterval(() => {
