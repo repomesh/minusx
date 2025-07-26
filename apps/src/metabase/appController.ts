@@ -9,6 +9,9 @@ import {
   MetabaseAppStateMBQLEditor,
   MetabasePageType,
 } from "./helpers/DOMToState";
+
+import { MetabaseAppStateSQLEditorV2 } from "./helpers/analystModeTypes";
+
 import {
   getAndFormatOutputTable,
   getSqlErrorMessage,
@@ -381,9 +384,11 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     labelDone: "Executed query",
     labelTask: "Executed SQL query",
     description: "Executes the SQL query in the Metabase SQL editor with support for template tags and parameters.",
-    renderBody: ({ sql, explanation }: { sql: string, explanation: string }, appState: MetabaseAppStateSQLEditor) => {
-      const sqlQuery = appState?.sqlQuery
-      return {text: explanation, code: sql, oldCode: sqlQuery, language: "sql"}
+    renderBody: ({ sql, explanation, template_tags={}, parameters=[] }: { sql: string, explanation: string, template_tags?: object, parameters?: any[] }, appState: MetabaseAppStateSQLEditor | MetabaseAppStateSQLEditorV2) => {
+      const currentQuery = appState?.currentCard?.dataset_query?.native?.query || appState?.sqlQuery || "";
+      const currentTemplateTags = appState?.currentCard?.dataset_query?.native?.['template-tags'] || {};
+      const currentParameters = appState?.currentCard?.parameters || [];
+      return {text: explanation, code: sql, oldCode: currentQuery, language: "sql", extraArgs: {old: {template_tags: currentTemplateTags, parameters: currentParameters}, new: {template_tags, parameters}}}
     }
   })
   async ExecuteQuery({ sql, _ctes = [], explanation = "", template_tags={}, parameters=[] }: { sql: string, _ctes?: CTE[], explanation?: string, template_tags?: object, parameters?: any[] }) {
@@ -431,10 +436,12 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     labelDone: "Edited query",
     labelTask: "Edited SQL query",
     description: "Edits the SQL query in the Metabase SQL editor with support for template tags and parameters.",
-    renderBody: ({ explanation, sql_edits}: { explanation: string, sql_edits: SQLEdits }, appState: MetabaseAppStateSQLEditor) => {
-      const sqlQuery = appState?.sqlQuery
-      const newQuery = applySQLEdits(sqlQuery, sql_edits);
-      return {text: explanation, code: newQuery, oldCode: sqlQuery, language: "sql"}
+    renderBody: ({ explanation, sql_edits, template_tags={}, parameters=[] }: { explanation: string, sql_edits: SQLEdits, template_tags?: object, parameters?: any[]}, appState: MetabaseAppStateSQLEditor | MetabaseAppStateSQLEditorV2) => {
+      const currentQuery = appState?.currentCard?.dataset_query?.native?.query || appState?.sqlQuery || "";
+      const currentTemplateTags = appState?.currentCard?.dataset_query?.native?.['template-tags'] || {};
+      const currentParameters = appState?.currentCard?.parameters || [];
+      const newQuery = applySQLEdits(currentQuery, sql_edits);
+      return {text: explanation, code: newQuery, oldCode: currentQuery, language: "sql", extraArgs: {old: {template_tags: currentTemplateTags, parameters: currentParameters}, new: {template_tags, parameters}}}
     }
   })
   async EditAndExecuteQuery({ sql_edits, _ctes = [], explanation = "", template_tags={}, parameters=[] }: { sql_edits: SQLEdits, _ctes?: CTE[], explanation?: string, template_tags?: object, parameters?: any[] }) {
