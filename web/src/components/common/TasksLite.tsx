@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import {
   Box,
+  Button,
   HStack,
   Icon,
+  IconButton,
   Spinner,
   Text,
+  Textarea,
   VStack,
 } from '@chakra-ui/react';
 import {
@@ -14,11 +17,13 @@ import {
 import { BiCircle } from 'react-icons/bi';
 import { MdBlock } from 'react-icons/md';
 import { IoChevronDown, IoChevronForward } from 'react-icons/io5';
+import { BsFillHandThumbsUpFill, BsFillHandThumbsDownFill } from 'react-icons/bs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { Task, Tasks as TasksInfo } from '../../state/chat/reducer';
 import { get, last } from 'lodash';
 import { getActionTaskLiteLabels } from '../../helpers/utils';
+import { useSubmitMessageFeedbackMutation } from '../../app/api/userStateApi';
 
 interface TaskWithLevel extends Task {
   level: number;
@@ -214,10 +219,15 @@ const flattenTasks = (tasks: TasksInfo, expandedRootTasks: Set<string> = new Set
 };
 
 export const TasksLite: React.FC = () => {
+  const [feedback, setFeedback] = useState<'positive' | 'negative' | null>(null);
+  const [negativeText, setNegativeText] = useState('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const thread = useSelector((state: RootState) => state.chat.activeThread);
   const activeThread = useSelector((state: RootState) => state.chat.threads[thread]);
   const taskInProgress = !(activeThread.status === 'FINISHED')
   const taskInterrupted = activeThread.interrupted
+  
+  const [submitMessageFeedback] = useSubmitMessageFeedbackMutation();
   
   const [expandedRootTasks, setExpandedRootTasks] = useState<Set<string>>(new Set());
 
@@ -259,6 +269,54 @@ export const TasksLite: React.FC = () => {
       get(lastMessage, 'role') === 'user' ||
       (typeof lastMessageContent === 'string' && lastMessageContent.includes('/start_task'))
     ) && (isEmpty || isLoading);
+
+  const handlePositiveFeedback = () => {
+    setFeedback('positive');
+    
+    // Fire-and-forget API call for positive feedback
+    const lastAssistantMessage = activeThread.messages
+      .slice()
+      .reverse()
+      .find(msg => msg.role === 'assistant');
+    
+    if (lastAssistantMessage) {
+      submitMessageFeedback({
+        conversation_id: activeThread.id,
+        message_index: lastAssistantMessage.index,
+        feedback_type: 'positive',
+        feedback_text: null
+      }).catch(error => {
+        console.warn('Failed to submit positive feedback:', error);
+      });
+    }
+  };
+
+  const handleNegativeFeedback = () => {
+    setFeedback('negative');
+  };
+
+  const handleSubmitNegativeFeedback = () => {
+    setFeedbackSubmitted(true);
+    
+    // Fire-and-forget API call for negative feedback
+    const lastAssistantMessage = activeThread.messages
+      .slice()
+      .reverse()
+      .find(msg => msg.role === 'assistant');
+    
+    if (lastAssistantMessage) {
+      submitMessageFeedback({
+        conversation_id: activeThread.id,
+        message_index: lastAssistantMessage.index,
+        feedback_type: 'negative',
+        feedback_text: negativeText.trim() || null
+      }).catch(error => {
+        console.warn('Failed to submit negative feedback:', error);
+      });
+    }
+  };
+
+  const showFeedbackButtons = !isEmpty && !isLoading && !taskInProgress && (feedback === null);
 
   if (isStarting) {
     return (
@@ -344,6 +402,71 @@ export const TasksLite: React.FC = () => {
             })}
           </VStack>
         </Box>
+
+        {showFeedbackButtons && (
+          <VStack spacing={1} pt={2}>
+            <Text fontSize="11" color="minusxBW.600" textAlign="center">
+              Were you satisfied with this answer? Feedback helps the agent improve and better adapt to you!
+            </Text>
+            <HStack justifyContent="center" spacing={2} w={"100%"}>
+              <IconButton
+                aria-label="Thumbs up"
+                icon={<BsFillHandThumbsUpFill />}
+                size="xs"
+                width="25%"
+                height="24px"
+                variant='outline'
+                onClick={handlePositiveFeedback}
+              />
+              <IconButton
+                aria-label="Thumbs down"
+                icon={<BsFillHandThumbsDownFill />}
+                size="xs"
+                width="25%"
+                height="24px"
+                variant='outline'
+                onClick={handleNegativeFeedback}
+                color='red.400'
+                borderColor={'red.400'}
+                _hover={{ bg: 'red.400', color: 'white' }}
+              />
+            </HStack>
+          </VStack>
+        )}
+
+        {feedback === 'negative' && !feedbackSubmitted && (
+          <VStack spacing={2} pt={2}>
+            <Textarea
+              placeholder="Please tell us what went wrong..."
+              value={negativeText}
+              onChange={(e) => setNegativeText(e.target.value)}
+              size="xs"
+              resize="vertical"
+              minH="60px"
+              bg="minusxBW.200"
+              border="1px solid"
+              borderColor="minusxBW.500"
+              borderRadius={5}
+              _focus={{ borderColor: "minusxBW.700" }}
+            />
+            <Button
+              size="xs"
+              colorScheme="minusxGreen"
+              onClick={handleSubmitNegativeFeedback}
+              isDisabled={!negativeText.trim()}
+            >
+              Submit Feedback
+            </Button>
+          </VStack>
+        )}
+
+        {((feedback == 'positive') || (feedbackSubmitted)) && (
+          <VStack spacing={1} pt={2}>
+            <Text fontSize="xs" color="minusxBW.600" textAlign="center" fontWeight="500">
+              Thanks for the feedback!
+            </Text>
+          </VStack>
+        )}
       </VStack>
     </Box>
   );

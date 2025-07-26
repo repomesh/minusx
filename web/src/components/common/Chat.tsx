@@ -138,7 +138,7 @@ const Chat: React.FC<ReturnType<typeof addToolInfoToActionPlanMessages>[number]>
             // borderLeftColor={role == 'user' ? 'transparent' : 'minusxBW.600'}
           />
         </Box>
-        {(isHovered || (reaction !== "unrated")) && (role == 'tool') && (
+        {/* {(isHovered || (reaction !== "unrated")) && (role == 'tool') && (
           <Box aria-label="message-reactions" position="absolute" bottom={-1} right={0}>
             <IconButton
               aria-label="Thumbs up"
@@ -158,7 +158,7 @@ const Chat: React.FC<ReturnType<typeof addToolInfoToActionPlanMessages>[number]>
               onClick={reaction == "negative" ? clearReactions : addNegativeReaction}
             />
           </Box>
-        )}
+        )} */}
         {(isHovered || (reaction !== "unrated")) && (role == 'user') && (
           <Box aria-label="message-actions" position="absolute" bottom={-1} right={0}>
             <IconButton
@@ -224,8 +224,9 @@ export const ChatSection = () => {
   <VStack justifyContent="space-between" alignItems="stretch" height={"100%"} width={"100%"}>
   <HStack className='chat-section' wrap="wrap" style={{ overflowY: 'scroll' }} width={'100%'} gap={1.5}>
     {Chats}
-    { configs.IS_DEV && tasks.length && <Tasks /> }
-    { !configs.IS_DEV &&  tasks.length && <TasksLite /> }
+    {/* { !configs.IS_DEV && tasks.length && <Tasks /> } */}
+    {/* { configs.IS_DEV &&  tasks.length && <TasksLite /> } */}
+    { tasks.length && <TasksLite /> }
     <OngoingActionStack />
     <div style={{ height: '10px', width: '100%' }} />
     <div ref={messagesEndRef} />
