@@ -43,6 +43,7 @@
     "eslint-plugin-unused-imports": "^2.0.0",
     "framer-motion": "^8.4.3",
     "idb": "^8.0.0",
+    "js-sha256": "^0.11.1",
     "lodash": "^4.17.21",
     "monaco-editor": "^0.52.2",
     "monaco-yaml": "^5.4.0",

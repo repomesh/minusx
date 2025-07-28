@@ -16,6 +16,7 @@ import { getAllCardsAndModels, getAllCardsLegacy, getDatabaseTablesAndModelsWith
 import { fetchDatabaseFields } from '../../../apps/src/metabase/helpers/metabaseAPI';
 import { getSelectedDbId } from '../../../apps/src/metabase/helpers/metabaseStateAPI';
 import { getModelsWithFields } from '../../../apps/src/metabase/helpers/metabaseModels';
+import { sha256 } from 'js-sha256';
 
 export interface MetadataItem {
   metadata_type: string;
@@ -58,14 +59,26 @@ export async function processMetadata(metadataItems: MetadataItem[]): Promise<an
 /**
  * Calculates metadata hash for caching purposes (simplified & faster)
  */
+
+function calculateMetadataHashFallback(content: string) {
+  return sha256(content); // `sha256` is globally available
+}
+
 async function calculateMetadataHash(metadataType: string, metadataValue: any, version: string): Promise<string> {
   // Simplified hash calculation - just hash the stringified data
   const content = JSON.stringify({ metadataType, version, metadataValue });
-  const data = new TextEncoder().encode(content);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  try {
+    const data = new TextEncoder().encode(content);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
 
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (error) {
+    console.warn('Failed to calculate metadata hash using crypto API, falling back:', error);
+    // Fallback to a simpler hash calculation
+    return calculateMetadataHashFallback(content);
+  }
+  
 }
 
 // Global map to track ongoing uploads by hash
