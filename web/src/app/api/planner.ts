@@ -23,6 +23,16 @@ export const getLLMResponse = async (payload: any, signal?: AbortSignal, deepres
     }).catch((error: Error | AxiosError) => {
       // check if unauthorized response, logout and throw error
       // otherwise pass error up
+      if (payload.isPrewarm) {
+        return {
+          data: {
+            tool_calls: [],
+            finish_reason: 'prewarm',
+            content: '',
+            tasks: []
+          }
+        }
+      }
       if (axios.isAxiosError(error) && error.response) {
         if (error.response.status === 401 || error.response.status === 403) {
           logoutState();
