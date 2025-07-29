@@ -25,7 +25,7 @@ import chat from '../../chat/chat'
 import _, { every, get, isEmpty, isEqual, isUndefined, pick, sortBy } from 'lodash'
 import { abortPlan, clearTasks, startNewThread, updateLastWarmedOn } from '../../state/chat/reducer'
 import { resetThumbnails, setInstructions as setTaskInstructions } from '../../state/thumbnails/reducer'
-import { setSuggestQueries, setDemoMode, DEFAULT_TABLES, TableInfo, setSelectedModels } from '../../state/settings/reducer'
+import { setSuggestQueries, DEFAULT_TABLES, TableInfo, setSelectedModels } from '../../state/settings/reducer'
 import { RootState } from '../../state/store'
 import { getSuggestions } from '../../helpers/LLM/remote'
 import { simplePlan } from '../../planner/simplePlan'
@@ -63,6 +63,7 @@ import { setupCollectionsAndModels } from '../../state/settings/availableCatalog
 import { Notify } from './Notify'
 import { ContextCatalog } from '../../helpers/utils';
 import { Markdown } from './Markdown'
+import ChatInputArea from './ChatInputArea'
 
 
 const app = getApp()
@@ -72,9 +73,7 @@ const LOW_CREDITS_THRESHOLD = 15
 const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const currentTool = getParsedIframeInfo().tool
   const currentToolVersion = getParsedIframeInfo().toolVersion
-  const isSheets = currentTool == 'google' && currentToolVersion == 'sheets'
-  const initialInstructions = useSelector((state: RootState) => state.thumbnails.instructions)
-  const [instructions, setInstructions] = useState<string>(initialInstructions)
+  const instructions = useSelector((state: RootState) => state.thumbnails.instructions)
   const [metaQuestion, setMetaQuestion] = useState<string>("")
   const thumbnails = useSelector((state: RootState) => state.thumbnails.thumbnails)
   const thread = useSelector((state: RootState) => state.chat.activeThread)
@@ -161,18 +160,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     }
   }, [relevantTables, dbInfo.id])
 
-  const debouncedSetInstruction = useCallback(
-    _.debounce((instructions) => dispatch(setTaskInstructions(instructions)), 500),
-    []
-  );
-  useEffect(() => {
-    debouncedSetInstruction(instructions);
-    return () => debouncedSetInstruction.cancel();
-  }, [instructions, debouncedSetInstruction]);
-
-  useEffect(() => {
-    setInstructions(initialInstructions);
-  }, [initialInstructions]);
+  // Debounced instructions update logic moved to ChatInputArea component
 
   // Prewarm logic
   useEffect(() => {
@@ -244,9 +232,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     })
   }
 
-  const updateDemoMode = (value: boolean) => {
-    dispatch(setDemoMode(value))
-  }
+  // updateDemoMode logic moved to ChatInputArea component
 
   const runTask = async () => {
     let toastTitle = ''
@@ -315,10 +301,10 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
 
     if (instructions) {
       const text = instructions
-      setInstructions('')
+      dispatch(setTaskInstructions(''))
       if (demoMode && currentTool === "jupyter") {
-        setMetaQuestion(instructions)
-        await metaPlanner({text: instructions})
+        setMetaQuestion(text)
+        await metaPlanner({text})
         setMetaQuestion('')
       } 
       else {
@@ -326,7 +312,7 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         chat.addUserMessage({
           content: {
             type: "DEFAULT",
-            text: instructions,
+            text,
             images: thumbnails
           },
         })
@@ -367,18 +353,13 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     const interval = setInterval(() => {
       if (isRecording) {
         const transcripts = getTranscripts()
-        setInstructions(transcripts.join(''))
+        dispatch(setTaskInstructions(transcripts.join('')))
       }
     }, 100)
     return () => clearInterval(interval)
   }, [isRecording])
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      runTask()
-    }
-  }
+  // onKeyDown logic moved to ChatInputArea component
 
   const openDevtoolTab = async (devtoolsTab: DevToolsTabName) => {
     if (isDevToolsOpen) {
@@ -707,75 +688,27 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         }
 
         <ReviewBox />
-        { !taskInProgress && appEnabledStatus.inputBox && 
-            <Stack aria-label="chat-input-area" position={"relative"}>
-                <AutosizeTextarea
-                ref={ref}
-                autoFocus
-                aria-label='chat-input'
-                value={instructions}
-                isDisabled={taskInProgress || isRecording}
-                onChange={(e) => setInstructions(e.target.value)}
-                onKeyDown={onKeyDown}
-                style={{ width: '100%', height: "100%" }}
-            />
-          <HStack aria-label="chat-controls" position={"absolute"} bottom={0} width={"100%"} p={2}>
-            <HStack justify={"space-between"}  width={"100%"}>
-              <HStack gap={0}>
-                {/* <VoiceInputButton disabled={taskInProgress} onClick={voiceInputOnClick} isRecording={isRecording}/> */}
-                {/* <QuickActionButton tooltip="Select & Ask" onclickFn={handleSnapClick} icon={BiScreenshot} isDisabled={isSheets || taskInProgress}/> */}
-                {/* <QuickActionButton tooltip="Clear Chat" onclickFn={clearMessages} icon={BiRefresh} isDisabled={messages.length === 0 || taskInProgress}/> */}
-                
-                {/* { currentTool == 'metabase'  && <Button size="xs" colorScheme="minusxGreen" borderWidth={1} borderColor="minusxGreen.600" variant="ghost" onClick={()=>openDevtoolTab("Context")}>"{selectedCatalog.slice(0, 20)}" in context</Button> } */}
-
-                {configs.IS_DEV &&false&& <Checkbox sx={{
-                  '& input:not(:checked) + span': {
-                    borderColor: 'minusxBW.500',
-                  },
-                  '& input:checked + span': {
-                    bg: 'minusxGreen.500',
-                    borderColor: 'minusxGreen.500',
-                  },
-                  '& input:checked:hover + span': {
-                    bg: 'minusxGreen.500',
-                    borderColor: 'minusxGreen.500',
-                  },
-                  span:{
-                    marginLeft: 1,
-                  }
-                  }}
-                  isChecked={demoMode}
-                  onChange={(e) => updateDemoMode(e.target.checked)}
-                >
-                  <Text fontSize="xs">Advanced Mode</Text>
-                </Checkbox>
-                }
-              </HStack>
-              <HStack>
-                {
-                  taskInProgress ? (
-                    <AbortTaskButton abortTask={() => dispatch(abortPlan())} disabled={!taskInProgress}/>
-                  ) : <RunTaskButton runTask={runTask} disabled={taskInProgress} />
-                }
-              </HStack>
-              
-            </HStack>
-          </HStack>
-        </Stack>
-        } 
+        { !taskInProgress && 
+          <ChatInputArea
+            ref={ref}
+            isRecording={isRecording}
+            runTask={runTask}
+            appEnabledStatus={appEnabledStatus}
+          />
+        }
         {taskInProgress && (
-            <HStack aria-label="stop-task-area" justifyContent="center" width="100%" py={2}>
-                <Button
-                    aria-label="stop-task-button"
-                    colorScheme="minusxGreen"
-                    size="sm"
-                    leftIcon={<BiStopCircle />}
-                    onClick={() => dispatch(abortPlan())}
-                    w={"100%"}
-                >
-                    Stop Task
-                </Button>
-            </HStack>
+          <HStack aria-label="stop-task-area" justifyContent="center" width="100%" py={2}>
+            <Button
+              aria-label="stop-task-button"
+              colorScheme="minusxGreen"
+              size="sm"
+              leftIcon={<BiStopCircle />}
+              onClick={() => dispatch(abortPlan())}
+              w={"100%"}
+            >
+              Stop Task
+            </Button>
+          </HStack>
         )}
         </VStack>
       </VStack>
