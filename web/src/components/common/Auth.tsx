@@ -182,6 +182,7 @@ const Auth = () => {
   const currentEmail = useSelector((state: RootState) => state.settings.currentEmail)
 
   useEffect(() => {
+    let tries = 1
     const checkToken = async () => {
       const mx_token = await getMXToken()
       
@@ -198,9 +199,13 @@ const Auth = () => {
             email,
           }))
           dispatch(setCurrentEmail(email))
+          return
         } catch (error) {
           console.error('Failed to authenticate embed token:', error)
         }
+      }
+      if (tries < 3) {
+        setTimeout(checkToken, (tries++) * 1000)
       }
     }
     if (isEmbedded) {
