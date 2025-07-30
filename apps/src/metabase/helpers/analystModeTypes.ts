@@ -52,7 +52,27 @@ const fieldsToRemove = [
   'embedding_params',
   'cache_ttl',
   'archived_directly',
-  'collection_preview'
+  'collection_preview',
+  // more useless stuff to remove
+  'displayIsLocked',
+  'view_count',
+  'table_id',
+  'can_run_adhoc_query',
+  'can_write',
+  'card_schema',
+  'dashboard_count',
+  'creator_id',
+  'can_restore',
+  'moderation_reviews',
+  'can_manage_db',
+  'entity_id',
+  'last-edit-info',
+  'metabase_version',
+  'dashboard',
+  'dashboard_id',
+  'parameter_usage_count', // this seems to always be 0 so removing
+  'public_uuid',
+  'can_delete'
 ];
 
 export function processCard(card: Card): Card {
