@@ -109,7 +109,7 @@ const ChatInputArea = forwardRef<HTMLTextAreaElement, ChatInputAreaProps>(
                   {taskInProgress ? (
                     <AbortTaskButton abortTask={() => dispatch(abortPlan())} disabled={!taskInProgress}/>
                   ) : (
-                    <RunTaskButton runTask={runTask} disabled={taskInProgress} />
+                    <RunTaskButton runTask={() => runTask(instructions)} disabled={taskInProgress} />
                   )}
                 </HStack>
               </HStack>
