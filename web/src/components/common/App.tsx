@@ -372,6 +372,7 @@ const AppBody = forwardRef((_props, ref) => {
   const appMode = useSelector((state: RootState) => state.settings.appMode)
   const isDevToolsOpen = useSelector((state: RootState) => state.settings.isDevToolsOpen)
   const variant = getParsedIframeInfo().variant
+  const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
   
   // Apply custom CSS throughout the application
   useCustomCSS()
@@ -381,6 +382,9 @@ const AppBody = forwardRef((_props, ref) => {
     }
   }, []) 
   useEffect(() => {
+    if (isEmbedded) {
+      return
+    }
     if (_.isUndefined(auth.session_jwt)) {
       authModule.register().then((data) => {
         const { session_jwt } = data
