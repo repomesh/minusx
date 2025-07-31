@@ -401,6 +401,7 @@ const AppBody = forwardRef((_props, ref) => {
   //   borderLeftColor={"minusxBW.500"} borderRightColor={"transparent"}
   //   borderTopColor={"minusxBW.500"} borderBottomColor={"minusxBW.500"}/>
   // )
+  const currentEmail = useSelector((state: RootState) => state.settings.currentEmail) 
 
   useEffect(() => {
     let tries = 1

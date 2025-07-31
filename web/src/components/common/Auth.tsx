@@ -179,7 +179,6 @@ const Auth = () => {
   const isOTPMode = authJWT ? true : false
   const helperMessage = useAppStore((state) => state.helperMessage)?.split('---')[1] || "Welcome to MinusX! You can ask us anything related to your data, and our agents will take care of the rest!"
   const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
-  const currentEmail = useSelector((state: RootState) => state.settings.currentEmail) 
   
 
   useEffect(() => {
