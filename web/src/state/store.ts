@@ -533,8 +533,7 @@ const migrations = {
   }
 }
 
-const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
-const BLACKLIST = isEmbedded ? Object.keys(combineReducerInput) : ['billing', 'cache', userStateApi.reducerPath]
+const BLACKLIST = ['billing', 'cache', userStateApi.reducerPath]
 
 const persistConfig = {
   key: 'root',
