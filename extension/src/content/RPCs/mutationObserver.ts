@@ -1,4 +1,4 @@
-import { debounce, isEqual, memoize, set, uniq } from "lodash";
+import { debounce, isEqual, memoize, set, uniq, throttle } from "lodash";
 import { DOMQuery, DOMQueryMap, DOMQueryMapResponse, DOMQueryResponse, queryDOMMap, queryDOMSingle } from "./getElements";
 import { sendIFrameMessage } from "./sendIFrameMessage";
 import { QuerySelector } from "../../helpers/pageParse/querySelectorTypes";
@@ -93,7 +93,7 @@ const _masterCallback = () => {
     })
 }
 
-const masterCallback = debounce(_masterCallback, OBSERVER_INTERVAL, {
+const masterCallback = throttle(_masterCallback, OBSERVER_INTERVAL, {
     trailing: true,
 })
 
