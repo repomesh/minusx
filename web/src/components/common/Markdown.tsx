@@ -193,7 +193,7 @@ function generateMetabaseQuestionURL(sql: string, databaseId: number | null = nu
   if (!origin || !isEmbedded) {
      return `${getOrigin()}/question#${hash}`;
   }
-  return `${origin}/question?hash=${hash}`;
+  return `${origin}/question?hash=${encodeURIComponent(hash)}`;
 }
 
 function extractLastSQLFromMessages(messages: any[], currentMessageIndex: number): string | null {
