@@ -7,7 +7,7 @@ import { Image, Box, Collapse, Tag, TagLabel, TagLeftIcon, Button } from "@chakr
 import { useSelector } from 'react-redux'
 import { RootState } from '../../state/store'
 import { renderString } from '../../helpers/templatize'
-import { getOrigin } from '../../helpers/origin'
+import { getOrigin, getParsedIframeInfo } from '../../helpers/origin'
 import { getApp } from '../../helpers/app'
 import { processSQLWithCtesOrModels } from '../../helpers/catalogAsModels'
 import { getAllTemplateTagsInQuery, replaceLLMFriendlyIdentifiersInSqlWithModels } from 'apps'
@@ -170,6 +170,7 @@ function ImageComponent(props: any) {
 function generateMetabaseQuestionURL(sql: string, databaseId: number | null = null, embedConfigs: EmbedConfigs = {}) {
   // Get Metabase origin from embed_configs if available, otherwise use iframe info
   const templateTags = getAllTemplateTagsInQuery(sql);
+  const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
   
   // Get all template tags in the query (we don't have access to snippets here, so pass undefined)
   const cardData = {
@@ -189,7 +190,7 @@ function generateMetabaseQuestionURL(sql: string, databaseId: number | null = nu
   
   const hash = btoa(JSON.stringify(cardData));
   const origin = embedConfigs.embed_host;
-  if (!origin) {
+  if (!origin || !isEmbedded) {
      return `${getOrigin()}/question#${hash}`;
   }
   return `${origin}/question?hash=${hash}`;
