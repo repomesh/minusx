@@ -99,9 +99,6 @@ export interface SaveCatalogPayload extends Omit<ContextCatalog, 'allowWrite'> {
   currentUserId: string
 }
 
-export interface EmbedConfigs {
-  embed_host?: string
-}
 
 interface Settings {
   isLocal: boolean,
@@ -140,7 +137,6 @@ interface Settings {
   manuallyLimitContext: boolean
   useV2States: boolean
   currentEmail?: string
-  embed_configs: EmbedConfigs
 }
 
 const initialState: Settings = {
@@ -182,7 +178,6 @@ const initialState: Settings = {
   metadataProcessingCache: {},
   manuallyLimitContext: false,
   useV2States: true,
-  embed_configs: {}
 }
 
 export const settingsSlice = createSlice({
@@ -417,9 +412,6 @@ export const settingsSlice = createSlice({
     setUseV2States: (state, action: PayloadAction<boolean>) => {
       state.useV2States = action.payload
     },
-    setEmbedConfigs: (state, action: PayloadAction<EmbedConfigs>) => {
-      state.embed_configs = action.payload
-    }
   },
 })
 
@@ -431,7 +423,7 @@ export const { updateIsLocal, updateUploadLogs,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules,
   applyTableDiff, setSelectedModels, setDRMode, setAnalystMode, setSelectedCatalog, saveCatalog, deleteCatalog, setMemberships,
   setGroupsEnabled, resetDefaultTablesDB, setModelsMode, setViewAllCatalogs, setEnableHighlightHelpers, setUseMemory, addMemory, setCustomCSS, setEnableStyleCustomization, setEnableUserDebugTools, setEnableReviews, setMetadataHash, setMetadataProcessingCache, clearMetadataProcessingCache,
-  updateManualContextSelection, setUseV2States, setCurrentEmail, setEmbedConfigs
+  updateManualContextSelection, setUseV2States, setCurrentEmail
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

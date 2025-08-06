@@ -12,7 +12,7 @@ import { getApp } from '../../helpers/app'
 import { processSQLWithCtesOrModels } from '../../helpers/catalogAsModels'
 import { getAllTemplateTagsInQuery, replaceLLMFriendlyIdentifiersInSqlWithModels } from 'apps'
 import type { MetabaseModel } from 'apps/types'
-import type { EmbedConfigs } from '../../state/settings/reducer'
+import { type EmbedConfigs } from '../../state/configs/reducer'
 import { Badge } from "@chakra-ui/react";
 import { CodeBlock } from './CodeBlock';
 import { BiChevronDown, BiChevronRight } from 'react-icons/bi';
@@ -239,9 +239,9 @@ export function Markdown({content, messageIndex}: {content: string, messageIndex
   const settings = useSelector((state: RootState) => ({
     selectedCatalog: state.settings.selectedCatalog,
     availableCatalogs: state.settings.availableCatalogs,
-    modelsMode: state.settings.modelsMode,
-    embed_configs: state.settings.embed_configs
+    modelsMode: state.settings.modelsMode
   }));
+  const embedConfigs = useSelector((state: RootState) => state.configs.embed);
   const mxModels = useSelector((state: RootState) => state.cache.mxModels);
   
   // Process template variables like {{MX_LAST_SQL_URL}}
@@ -261,7 +261,7 @@ export function Markdown({content, messageIndex}: {content: string, messageIndex
           // Get current database ID from app state
           const databaseId = toolContext?.dbId || null;
           
-          const questionURL = generateMetabaseQuestionURL(lastSQL, databaseId, settings.embed_configs);
+          const questionURL = generateMetabaseQuestionURL(lastSQL, databaseId, embedConfigs);
           
           return renderString(content, {
             'MX_LAST_SQL_URL': `\n\n --- \n\n Continue your analysis [here](${questionURL})`

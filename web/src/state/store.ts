@@ -14,6 +14,7 @@ import semanticLayer from './semantic-layer/reducer'
 import { catalogsListener } from './settings/availableCatalogsListener'
 import cache from './cache/reducer'
 import notifications from './notifications/reducer'
+import configsReducer from './configs/reducer'
 import { userStateApi } from '../app/api/userStateApi'
 import { get } from 'lodash'
 import { getParsedIframeInfo } from '../helpers/origin'
@@ -27,6 +28,7 @@ const combineReducerInput = {
   semanticLayer,
   cache,
   notifications,
+  configs: configsReducer,
   [userStateApi.reducerPath]: userStateApi.reducer
 }
 
@@ -38,7 +40,8 @@ const rootReducer = (state: any, action: any) => {
   switch (action.type) {
     case 'reset':
       updatedState = {
-        auth: state.auth
+        auth: state.auth,
+        configs: state.configs
       };
       break;
     
