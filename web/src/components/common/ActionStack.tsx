@@ -58,6 +58,7 @@ export const ActionStack: React.FC<{status: string, actions: Array<ActionStatusV
   const origin = url ? new URL(url).origin : '';
   const thread = useSelector((state: RootState) => state.chat.activeThread)
   const totalThreads = useSelector((state: RootState) => state.chat.threads.length)
+  const embedConfigs = useSelector((state: RootState) => state.configs.embed);
 
   const lastThread = (thread === totalThreads - 1)
   
@@ -83,7 +84,7 @@ export const ActionStack: React.FC<{status: string, actions: Array<ActionStatusV
   }
   const preExpanderTextArr = actions.map(action => {
     const { text } = action.renderInfo || {}
-    return processModelToUIText(text || '', origin)
+    return processModelToUIText(text || '', origin, embedConfigs)
   }).filter(text => text !== '')
 
 //   const preExpanderText = preExpanderTextArr.length > 1 

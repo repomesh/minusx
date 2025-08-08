@@ -1,5 +1,7 @@
 import { isEqual, some } from "lodash";
 import { getApp } from "./app";
+import { EmbedConfigs } from "../state/configs/reducer";
+import { getParsedIframeInfo } from "./origin";
 
 export async function sleep(ms: number = 0) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,7 +86,7 @@ export const getActionTaskLiteLabels = (action: string) => {
 }
 
 
-export const processModelToUIText = (text: string, origin: string): string => {
+export const processModelToUIText = (text: string, origin: string, embedConfigs: EmbedConfigs = {}): string => {
     if (text === ''){
         return ''
     }
@@ -96,9 +98,21 @@ export const processModelToUIText = (text: string, origin: string): string => {
     }
     if (text.includes("card_id:") && (origin != '')) {
         //Replace [card_id:<id>] with link
-        // Replace [card_id:<id>] with markdown link
+        // Replace [card_id:<id>] with markdown link using embed URL logic
         text = text.replace(/\[card_id:(\d+)\]/g, (match, id) => {
-            return `[Card ID: ${id}](${origin}/question/${id})`;
+            const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true';
+            const embedHost = embedConfigs.embed_host;
+            
+            let questionUrl;
+            if (embedHost && isEmbedded) {
+                // Use embed host for embedded mode
+                questionUrl = `${embedHost}/question/${id}`;
+            } else {
+                // Use regular origin
+                questionUrl = `${origin}/question/${id}`;
+            }
+            
+            return `[Card ID: ${id}](${questionUrl})`;
         });
     }
     return text
