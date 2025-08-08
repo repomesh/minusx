@@ -191,7 +191,6 @@ const AppLoggedIn = forwardRef((_props, ref) => {
 
   // Update thread id on start
   useEffect(() => {
-    // dispatch(updateThreadID())
     intelligentThreadStart(store.getState).then(result => {
       if (result.restored) {
         console.log('Restored thread context for SQL:', result.matchingSQL);

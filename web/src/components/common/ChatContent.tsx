@@ -15,13 +15,13 @@ export const ChatContent: React.FC<{content: ChatMessageContent, messageIndex?: 
   messageIndex,
   role
 }) => {
-  // const url = useAppStore((state) => state.toolContext)?.url || ''
-  const origin = getOrigin()
+  const url = useAppStore((state) => state.toolContext)?.url || ''
+  const origin = url ? new URL(url).origin : '';
   const pageType = useAppStore((state) => state.toolContext)?.pageType || ''
   const embedConfigs = useSelector((state: RootState) => state.configs.embed);
   
   if (content.type == 'DEFAULT') {
-    const contentText = ((pageType === 'dashboard' || pageType === 'unknown') && role === 'assistant') ? `${content.text} {{MX_LAST_SQL_URL}}` : content.text;
+    const contentText = ((pageType === 'dashboard' || pageType === 'unknown') && role === 'assistant') ? `${content.text} {{MX_LAST_QUERY_URL}}` : content.text;
     return (
       <div>
         {content.images.map(image => (
