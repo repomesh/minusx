@@ -115,5 +115,22 @@ export const processModelToUIText = (text: string, origin: string, embedConfigs:
             return `[Card ID: ${id}](${questionUrl})`;
         });
     }
+    if (text.includes("<OUTPUT>")) {
+        const match = text.match(/<OUTPUT>(.*?)<\/OUTPUT>/s);
+        if (match) {
+            text = match[1];
+        }
+        if (text.includes("---")) {
+            return text;
+        }
+        return '';
+    }
+    if (text.includes("<ERROR>")) {
+        const match = text.match(/<ERROR>(.*?)<\/ERROR>/s);
+        if (match) {
+            text = match[1];
+        }
+        return `> ${text}. Fixing it!`;
+    }
     return text
 }

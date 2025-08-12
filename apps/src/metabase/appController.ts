@@ -17,6 +17,7 @@ import {
   getAndFormatOutputTable,
   getSqlErrorMessage,
   metabaseToCSV,
+  metabaseToMarkdownTable,
   waitForQueryExecution,
 } from "./helpers/operations";
 import {
@@ -261,7 +262,8 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     if (response.error) {
       actionContent.content = `<ERROR>${response.error}</ERROR>`;
     } else {
-      const asMarkdown = metabaseToCSV(response.data);
+    //   const asMarkdown = metabaseToCSV(response.data);
+        const asMarkdown = metabaseToMarkdownTable(response.data);
       actionContent.content = asMarkdown;
     }
     return actionContent;
@@ -275,7 +277,8 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     if (response.error) {
       actionContent.content = `<ERROR>${response.error}</ERROR>`;
     } else {
-      const asMarkdown = metabaseToCSV(response.data);
+    //   const asMarkdown = metabaseToCSV(response.data);
+        const asMarkdown = metabaseToMarkdownTable(response.data);
       actionContent.content = asMarkdown;
     }
     return actionContent;
@@ -315,7 +318,9 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     if (response.error) {
       actionContent.content = `<ERROR>${response.error}</ERROR>`;
     } else {
-      const asMarkdown = metabaseToCSV(response.data);
+    //   const asMarkdown = metabaseToCSV(response.data);
+        const asMarkdown = metabaseToMarkdownTable(response.data);
+
       if (!asMarkdown) {
         actionContent.content = `<OUTPUT>EMPTY_RESULTS</OUTPUT>`;
       } else {
@@ -451,7 +456,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     
     if (pageType === 'sql') {
         // if (hasTemplateTagsOrParams) {
-            return await this.updateSQLQueryWithParams({ sql, template_tags, parameters, parameterValues, executeImmediately: true, _type: "csv", ctes: _ctes });
+            return await this.updateSQLQueryWithParams({ sql, template_tags, parameters, parameterValues, executeImmediately: true, _type: "markdown", ctes: _ctes });
         // } else {
             // return await this.updateSQLQuery({ sql, executeImmediately: true, _type: "csv", ctes: _ctes });
         // }
@@ -500,7 +505,7 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     const pageType = metabaseState.useStore().getState().toolContext?.pageType;
     
     if (pageType === 'sql') {
-        return await this.updateSQLQuery({ sql, executeImmediately: true, _type: "csv", ctes: _ctes });
+        return await this.updateSQLQuery({ sql, executeImmediately: true, _type: "markdown", ctes: _ctes });
     }
     else if (pageType === 'dashboard') {
         return await this.runSQLQuery({ sql, ctes: _ctes });
