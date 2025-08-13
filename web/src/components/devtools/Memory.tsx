@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react"
-import { Text, Box, HStack, Switch, Badge } from "@chakra-ui/react";
+import React from "react"
+import { Text, HStack, Switch } from "@chakra-ui/react";
 import { getParsedIframeInfo } from "../../helpers/origin"
-import _ from 'lodash';
 import { AdditionalContext } from '../common/AdditionalContext';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
@@ -37,6 +36,7 @@ export const MinusXMD: React.FC = () => {
                 </HStack>
             </HStack>
         </HStack>
+        
         <AdditionalContext />
     </>
 }
