@@ -5,6 +5,7 @@ import {
   HStack,
   Icon,
   IconButton,
+  Link,
   Spinner,
   Text,
   Textarea,
@@ -24,6 +25,7 @@ import { Task, Tasks as TasksInfo } from '../../state/chat/reducer';
 import { get, last } from 'lodash';
 import { getActionTaskLiteLabels } from '../../helpers/utils';
 import { useSubmitMessageFeedbackMutation } from '../../app/api/userStateApi';
+import { getParsedIframeInfo } from '../../helpers/origin';
 
 interface TaskWithLevel extends Task {
   level: number;
@@ -226,6 +228,7 @@ export const TasksLite: React.FC = () => {
   const activeThread = useSelector((state: RootState) => state.chat.threads[thread]);
   const taskInProgress = !(activeThread.status === 'FINISHED')
   const taskInterrupted = activeThread.interrupted
+  const isEmbedded = getParsedIframeInfo()?.isEmbedded as unknown === 'true';
   
   const [submitMessageFeedback] = useSubmitMessageFeedbackMutation();
   
@@ -356,7 +359,6 @@ export const TasksLite: React.FC = () => {
       </Box>
     );
   }
-
   return (
     <Box
       bg={'minusxBW.300'}
@@ -465,6 +467,23 @@ export const TasksLite: React.FC = () => {
             <Text fontSize="xs" color="minusxBW.600" textAlign="center" fontWeight="500">
               Thanks for the feedback!
             </Text>
+            {!isEmbedded && (
+              <Text fontSize="xs" color="minusxBW.600" textAlign="center" fontWeight="500">
+                Please consider rating us on the &nbsp;
+                <Link
+                  href="https://chromewebstore.google.com/detail/minusx/ngneijhbpnongpekeimkbjinkkpfkaop"
+                  isExternal
+                  color="minusxGreen.600"
+                  display={'inline'}
+                  fontSize="xs"
+                  fontWeight="bold"
+                  textDecoration="underline"
+                >
+                  Chrome Web Store. 
+                </Link>
+                &nbsp; to support our work!
+              </Text>
+            )}
           </VStack>
         )}
       </VStack>

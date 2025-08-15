@@ -20,7 +20,6 @@ import RunTaskButton from './RunTaskButton'
 import AbortTaskButton from './AbortTaskButton'
 import { ChatSection } from './Chat'
 import { BiScreenshot, BiPaperclip, BiMessageAdd, BiEdit, BiTrash, BiBookBookmark, BiTable, BiRefresh, BiStopCircle, BiMemoryCard, BiGroup } from 'react-icons/bi'
-import { ReviewBox } from './ReviewBox'
 import chat from '../../chat/chat'
 import _, { every, get, isEmpty, isEqual, isUndefined, pick, sortBy } from 'lodash'
 import { abortPlan, clearTasks, startNewThread, updateLastWarmedOn, cloneThreadFromHistory } from '../../state/chat/reducer'
@@ -702,7 +701,6 @@ const TaskUI = forwardRef<HTMLTextAreaElement>((_props, ref) => {
         </HStack>
         } */}
 
-        <ReviewBox />
         { !taskInProgress && 
           <ChatInputArea
             ref={ref}
