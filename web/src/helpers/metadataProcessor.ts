@@ -23,6 +23,7 @@ export interface MetadataItem {
   metadata_value: any;
   version: string;
   metadata_hash: string;
+  database_id?: string;
 }
 
 export interface MetadataRequest {
@@ -94,7 +95,33 @@ const ongoingMetadataProcessing = new Map<number, Promise<MetadataProcessingResu
  * @param metadataHash The calculated hash to send to server
  * @returns The hash returned from the server
  */
-async function uploadMetadata(metadataType: string, data: any, metadataHash: string): Promise<string | undefined> {
+
+// async function gzipBase64(obj: any): Promise<string> {
+//   const json = JSON.stringify(obj);
+//   const enc = new TextEncoder().encode(json);
+//   const stream = new Blob([enc]).stream().pipeThrough(new CompressionStream('gzip'));
+//   const gzBytes = new Uint8Array(await new Response(stream).arrayBuffer());
+//   return btoa(String.fromCharCode(...gzBytes));
+// }
+
+async function gzipBase64(obj: any): Promise<string> {
+  const json = JSON.stringify(obj);
+  const enc = new TextEncoder().encode(json);
+
+  const stream = new Blob([enc]).stream().pipeThrough(new CompressionStream('gzip'));
+  const blob = await new Response(stream).blob();
+
+  // Produces a data URL; strip the prefix
+  const b64 = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve((r.result as string).split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+  return b64;
+}
+
+async function uploadMetadata(metadataType: string, data: any, metadataHash: string, database_id: number): Promise<string | undefined> {
   // Check if this hash is already being uploaded
   if (ongoingUploads.has(metadataHash)) {
     console.log(`[minusx] Upload already in progress for hash ${metadataHash}, waiting...`)
@@ -103,11 +130,24 @@ async function uploadMetadata(metadataType: string, data: any, metadataHash: str
 
   // Create and store the upload promise
   const uploadPromise = (async () => {
+    // Stringify data, gzip it, and base64 encode
+    let metadata_value = { [metadataType]: data }
+    try {
+      const compressedData = await gzipBase64(data);
+      metadata_value = {
+        type: 'gzip',
+        [metadataType]: compressedData
+      }
+    } catch (error) {
+      console.warn(`Failed to compress ${metadataType} data, using uncompressed version`, error);
+    }
+    
     const metadataItem: MetadataItem = {
       metadata_type: metadataType,
-      metadata_value: { [metadataType]: data },
+      metadata_value,
       version: '1.0',
-      metadata_hash: metadataHash
+      metadata_hash: metadataHash,
+      database_id: `${database_id}`
     };
 
     try {
@@ -131,14 +171,14 @@ async function uploadMetadata(metadataType: string, data: any, metadataHash: str
 
 async function processMetadataWithCaching(
   metadataType: string,
-  dataFetcher: () => Promise<any>): Promise<string | undefined> {
+  dataFetcher: () => Promise<any>,
+  database_id: number): Promise<string | undefined> {
   // Fetch the data
   const data = await dataFetcher()
   if (isEmpty(data)) {
     console.warn(`[minusx] No data found for ${metadataType}, skipping upload`)
     return undefined; // No data to process
   }
-  console.log('Retrieved data for metadata type', metadataType, data)
 
   // Calculate hash of current data
   const currentHash = await calculateMetadataHash(metadataType, { [metadataType]: data }, '1.0')
@@ -151,17 +191,18 @@ async function processMetadataWithCaching(
   if (!storedHashes[currentHash]) {
     try {
       console.log(`[minusx] ${metadataType} data changed, uploading to metadata endpoint`)
-      const serverHash = await uploadMetadata(metadataType, data, currentHash)
+      const serverHash = await uploadMetadata(metadataType, data, currentHash, database_id)
 
       // Store the new hash in Redux
       if (!serverHash) {
         console.warn(`[minusx] No hash returned for ${metadataType} metadata upload`)
-        return serverHash; // Return current hash even if upload failed
+        return undefined; // Return undefined when upload failed
       }
       dispatch(setMetadataHash(serverHash))
       console.log(`[minusx] ${metadataType} metadata uploaded and hash updated`)
     } catch (error) {
       console.warn(`[minusx] Failed to upload ${metadataType} metadata:`, error)
+      return undefined
       // Continue without failing the entire request
     }
   } else {
@@ -221,56 +262,7 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
       ])
       console.log('[minusx] All API calls completed. Processing data...')
       
-      // Step 2: Create sets for efficient lookup of existing tables
-      const existingTableNames = new Set<string>()
-      
-      // Add tables from dbSchema
-      if (dbSchema.tables) {
-        dbSchema.tables.forEach((table: any) => {
-          const tableName = table.name
-          const schemaName = table.schema || dbSchema.default_schema
-          const fullName = schemaName ? `${schemaName}.${tableName}` : tableName
-          
-          existingTableNames.add(tableName)
-          existingTableNames.add(fullName)
-        })
-      }
-      
-      // Add models from dbSchema
-      if (dbSchema.models) {
-        dbSchema.models.forEach((model: any) => {
-          existingTableNames.add(model.name)
-        })
-      }
-      
-      console.log('[minusx] Found existing tables/models:', existingTableNames.size)
-      
-      // Step 3: Find intersection of referenced tables that actually exist
-      const validReferencedTables = referencedTables.filter((table: any) => {
-        const tableName = table.name
-        const schemaName = table.schema
-        const fullName = schemaName ? `${schemaName}.${tableName}` : tableName
-        
-        return existingTableNames.has(tableName) || existingTableNames.has(fullName)
-      })
-      
-      console.log('[minusx] Valid referenced tables:', validReferencedTables.length, 'out of', referencedTables.length)
-      
-      // Step 4: Filter fields in-memory using table names
-      const validTableNames = new Set(validReferencedTables.map((table: any) => {
-        const schemaName = table.schema
-        return schemaName ? `${schemaName}.${table.name}` : table.name
-      }))
-      
-      console.log('[minusx] Filtering fields for', validTableNames.size, 'valid tables...')
-      
-      const filteredFields = cards.length < 100 || allFields.length < 20000 ? allFields : allFields.filter((field: any) => {
-        const tableName = get(field, 'table_name')
-        const tableSchema = get(field, 'schema')
-        const fullTableName = tableSchema ? `${tableSchema}.${tableName}` : tableName
-        
-        return validTableNames.has(tableName) || validTableNames.has(fullTableName)
-      })
+      const filteredFields = allFields // Not filtering in new flow
       
       console.log('[minusx] Fields after filtering:', filteredFields.length, 'out of', allFields.length)
       
@@ -279,10 +271,10 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
       console.log('[minusx] Processing metadata with filtered data...')
       
       const [cardsHash, dbSchemaHash, fieldsHash, modelFieldsHash] = await Promise.all([
-        processMetadataWithCaching('cards', async () => cards),
-        processMetadataWithCaching('dbSchema', async () => dbSchema),
-        processMetadataWithCaching('fields', async () => filteredFields),
-        processMetadataWithCaching('modelFields', async () => modelFields)
+        processMetadataWithCaching('cards', async () => cards, selectedDbId),
+        processMetadataWithCaching('dbSchema', async () => dbSchema, selectedDbId),
+        processMetadataWithCaching('fields', async () => filteredFields, selectedDbId),
+        processMetadataWithCaching('modelFields', async () => modelFields, selectedDbId)
       ])
       
       console.log('[minusx] Coordinated metadata processing complete')
@@ -291,7 +283,8 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
         cardsHash,
         dbSchemaHash, 
         fieldsHash,
-        modelFieldsHash
+        modelFieldsHash,
+        selectedDbId
       }
   
       // Cache the result for this database ID
