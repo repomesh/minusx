@@ -61,12 +61,9 @@ export async function planActionsRemote({
     
     // Add selected asset_slug if available
     const selectedAssetSlug = currentState.settings.selectedAssetId;
-    const selectedAsset = currentState.settings.availableAssets.find(asset => asset.slug === selectedAssetSlug);
     if (selectedAssetSlug) {
       // @ts-ignore
       payload.asset_slug = selectedAssetSlug;
-      // @ts-ignore
-      payload.asset_content = selectedAsset?.content || {};
       console.log('[minusx] Added asset_slug to request for enhanced context:', selectedAssetSlug);
     }
   }
