@@ -140,9 +140,9 @@ export const metabaseInternalState: MetabaseInternalState = {
 ---
 
 \`[badge]✨Product Update✨\`  \n #### Launching: **Review Mode**
-Review Mode allows you to precisely control what updates MinusX makes to your SQL queries. Accept or suggest changes to MinusX through a side-by-side comparison to iterate on your complex queries faster!
+Review Mode lets you accept or tweak MinusX's SQL changes with a clean side-by-side diff. Iterate and perfect complex queries faster! [[Read more](https://docs.minusx.ai/en/articles/10510685-review-mode)]
 
-![img](https://minusx.ai/app_assets/side-by-side.png)
+[![img](https://minusx.ai/app_assets/review_mode.gif)](https://docs.minusx.ai/en/articles/10510685-review-mode)
 
 `,
 };
