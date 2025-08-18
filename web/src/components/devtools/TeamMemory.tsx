@@ -253,7 +253,7 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
     const renderContent = () => {
         if (asset.type === 'context') {
             // Check if content has the new structure with 'text' and 'entities'
-            if (asset.content && typeof asset.content === 'object' && asset.content.text && asset.content.entities) {
+            if (asset.content && typeof asset.content === 'object') {
                 return (
                     <VStack align="stretch" spacing={3}>
                         {/* Render text as markdown */}
@@ -266,11 +266,11 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
                             maxHeight="200px"
                             overflowY="auto"
                         >
-                            <Markdown content={asset.content.text} />
+                            <Markdown content={asset.content.text === '' ? '> Note: Text context is empty' : asset.content.text} />
                         </Box>
                         
                         {/* Render entities as a list */}
-                        {asset.content.entities && asset.content.entities.length > 0 && (
+                        {(
                             <Box 
                                 bg="gray.50" 
                                 p={3} 
