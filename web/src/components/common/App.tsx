@@ -181,11 +181,12 @@ const AppLoggedIn = forwardRef((_props, ref) => {
     if (atlasData && atlasData.accessible_assets) {
       console.log('[minusx] Loaded assets from Atlas API:', atlasData.accessible_assets.length)
       dispatch(setAvailableAssets(atlasData.accessible_assets))
+    } else {
+      dispatch(setAvailableAssets([]))
     }
     
     if (atlasError) {
       console.warn('[minusx] Failed to load assets from Atlas API:', atlasError)
-      dispatch(setAvailableAssets([]))
     }
   }, [atlasData, atlasLoading, atlasError])
 
