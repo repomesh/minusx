@@ -44,7 +44,16 @@ async function _init(localConfigs: Promise<object>) {
   setupStyles('content.styles.css')
   // setupStyles(configs.WEB_CSS_CONFIG_URL, false)
 
-  const origin = window.location.origin
+  let origin = window.location.origin
+  try {
+    const MetabaseBootstrap = JSON.parse(document.getElementById("_metabaseBootstrap").textContent)
+    const siteUrl = MetabaseBootstrap['site-url']
+    if (siteUrl && !isEmpty(siteUrl)) {
+      origin = siteUrl
+    }
+  } catch (e) {
+    console.warn('[minusx] MetabaseBootstrap not found, using window location origin')
+  }
   const href = window.location.href
   const width = '350'
   const variant = 'default'
