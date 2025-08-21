@@ -15,6 +15,11 @@ import {
   ValidMinusxRootClass,
 } from 'extension/types'
 import { get } from 'lodash'
+import { getOrigin } from '../helpers/origin'
+
+const origin = getOrigin()
+const fullURL = new URL(origin)
+const differentBaseURL = fullURL.origin !== origin && fullURL.pathname && fullURL.pathname !== '/'
 
 // Hack to handle RPC messages until we replace all instances
 // Once all instances are replaced, we can remove this function
@@ -101,10 +106,19 @@ export const fetchData = (
   body?: unknown,
   headers?: Record<string, string>,
   csrfInfo?: { cookieKey: string; headerKey: string }
-) =>
-  sendMessage('fetchData', [url, method, body, headers || {}, csrfInfo], {
+) => {
+  if (differentBaseURL) {
+    if (url.startsWith('/')) {
+      url = fullURL.pathname + url
+    } else {
+      url = fullURL.pathname + '/' + url
+    }
+  }
+  return sendMessage('fetchData', [url, method, body, headers || {}, csrfInfo], {
     log_rpc: false,
   })
+}
+  
 export const queryURL = () => sendMessage('queryURL', [])
 export const getMXToken = () => sendMessage('getMXToken', [])
 export const getMetabaseState = (path: Parameters<typeof get>[1]) =>
