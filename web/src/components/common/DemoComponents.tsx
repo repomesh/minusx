@@ -26,7 +26,7 @@ const MESSAGES = [
   
   ---
   \`[badge]Protip: \` Install MinusX on your own Metabase with a [simple Chrome Extension](https://minusx.ai/chrome-extension/)`,
-  `Hey there! Welcome to the **[MinusX Dashboard Demo](https://docs.minusx.ai/en/articles/11496071-q-a-on-dashboards)**. Try any of the suggested questions, or ask something of your own!
+  `Welcome to MinusX! Use this chat to ask any questions about the data.
   
   ---
   \`[badge]Protip: \` Install MinusX on your own Metabase with a [simple Chrome Extension](https://minusx.ai/chrome-extension/)`
