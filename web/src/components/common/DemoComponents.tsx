@@ -9,7 +9,8 @@ import { RootState } from '../../state/store';
 const DEMO_SLUGS = [
     "/138-demo-sql",
     "/139-demo-mbql",
-    "/1-e-commerce-insights"
+    "/1-e-commerce-insights",
+    "/34-us-green-card"
 ]
 
 const MESSAGES = [
@@ -24,13 +25,18 @@ const MESSAGES = [
       `Hey there! Welcome to the **[MinusX Dashboard Demo](https://docs.minusx.ai/en/articles/11496071-q-a-on-dashboards)**. Try any of the suggested questions, or ask something of your own!
   
   ---
+  \`[badge]Protip: \` Install MinusX on your own Metabase with a [simple Chrome Extension](https://minusx.ai/chrome-extension/)`,
+  `Hey there! Welcome to the **[MinusX Dashboard Demo](https://docs.minusx.ai/en/articles/11496071-q-a-on-dashboards)**. Try any of the suggested questions, or ask something of your own!
+  
+  ---
   \`[badge]Protip: \` Install MinusX on your own Metabase with a [simple Chrome Extension](https://minusx.ai/chrome-extension/)`
 ]
 
 const MESSAGE_TITLES = [
     "SQL Demo",
     "MBQL Demo",
-    "Dashboard Q&A"
+    "Dashboard Q&A",
+    "Green Cards"
 ]
 
 const ALL_SUGGESTIONS = [
@@ -44,6 +50,11 @@ const ALL_SUGGESTIONS = [
     ],
     [
         "what's the total non gizmo order %?"
+    ],
+    [
+        "Show me the top 10 most popular green card categories",
+        "what's the average processing time for green cards?",
+        "how many green cards were issued in the 2024?"
     ]
 ]
 
