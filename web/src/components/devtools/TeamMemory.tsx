@@ -18,12 +18,6 @@ export const TeamMemory: React.FC = () => {
     const assetsLoading = useSelector((state: RootState) => state.settings.assetsLoading)
     const useTeamMemory = useSelector((state: RootState) => state.settings.useTeamMemory)
 
-    // Auto-select first asset when assets are loaded and none is selected
-    React.useEffect(() => {
-        if (availableAssets.length > 0 && !selectedAssetId) {
-            dispatch(setSelectedAssetId(availableAssets[0].slug))
-        }
-    }, [availableAssets, selectedAssetId])
     
     const handleAssetSelection = (assetSlug: string) => {
         dispatch(setSelectedAssetId(assetSlug === '' ? null : assetSlug))
