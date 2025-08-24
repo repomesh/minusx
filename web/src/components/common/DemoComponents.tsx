@@ -53,7 +53,7 @@ const ALL_SUGGESTIONS = [
     ],
     [
         "Show me the top 10th percentile of income for H1Bs",
-        "Show me the top 10 most popular green card categories",
+        "Show me the top 10 most popular green card visa categories",
         "How many green card applications were certified in 2024?"
     ]
 ]
