@@ -202,11 +202,11 @@ export const ChatSection = () => {
   const tasks = activeThread.tasks
   const url = useAppStore((state) => state.toolContext)?.url || ''
 
-  useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 100);
-  }, [messages.length]);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  //   }, 100);
+  // }, [messages.length]);
   // need to add status information to tool calls of role='assistant' messages
   // just create a map of all role='tool' messages by their id, and for each
   // tool call in each assistant message, add the status from the corresponding
