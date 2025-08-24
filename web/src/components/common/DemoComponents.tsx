@@ -52,9 +52,9 @@ const ALL_SUGGESTIONS = [
         "what's the total non gizmo order %?"
     ],
     [
+        "Show me the top 10th percentile of income for H1Bs",
         "Show me the top 10 most popular green card categories",
-        "what's the average processing time for green cards?",
-        "how many green cards were issued in the 2024?"
+        "How many green card applications were certified in 2024?"
     ]
 ]
 
