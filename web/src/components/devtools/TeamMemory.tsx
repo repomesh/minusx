@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react"
 import { Text, Box, HStack, Badge, VStack, Spinner, Menu, MenuButton, MenuList, MenuItem, Button, Icon, Switch } from "@chakra-ui/react";
-import { BiChevronDown, BiCheck, BiTime, BiBuildings, BiGroup } from "react-icons/bi";
+import { BiChevronDown, BiCheck, BiBuildings, BiGroup } from "react-icons/bi";
 import { getParsedIframeInfo } from "../../helpers/origin"
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { dispatch } from '../../state/dispatch';
 import { setSelectedAssetId, setUseTeamMemory } from '../../state/settings/reducer';
-import { Notify } from '../common/Notify';
 import { CodeBlock } from '../common/CodeBlock';
 import { DisabledOverlay } from '../common/DisabledOverlay';
 import { Markdown } from '../common/Markdown';
+import { Notify } from '../common/Notify';
 
 export const TeamMemory: React.FC = () => {
     const tool = getParsedIframeInfo().tool
@@ -136,83 +136,75 @@ export const TeamMemory: React.FC = () => {
             
             {/* Selected Asset Details */}
             {selectedAsset && (
-                <Box 
-                    bg="gray.50" 
-                    border="1px solid" 
-                    borderColor="gray.200"
-                    borderRadius="md" 
-                    p={4}
-                >
-                    <VStack align="stretch" spacing={3}>
+                <VStack align="stretch" spacing={4}>
+                    {/* Asset Header with clear team/org info */}
+                    <VStack align="stretch" spacing={2}>
                         <Text fontSize="lg" fontWeight="semibold" color="gray.800">
                             {selectedAsset.name}
                         </Text>
                         
-                        <HStack spacing={2} wrap="wrap">
-                            <Badge colorScheme="gray" variant="subtle">
-                                {selectedAsset.type}
-                            </Badge>
-                            <Badge variant="subtle" colorScheme="gray">
-                                <HStack spacing={2}>
-                                    <Icon as={BiGroup} boxSize={3} />
-                                    <Text fontSize="xs">{selectedAsset.team_slug}</Text>
-                                </HStack>
-                            </Badge>
-                            <Badge variant="subtle" colorScheme="gray">
-                                <HStack spacing={2}>
-                                    <Icon as={BiBuildings} boxSize={3} />
-                                    <Text fontSize="xs">{selectedAsset.company_slug}</Text>
-                                </HStack>
-                            </Badge>
-                            <Badge variant="subtle" colorScheme="gray">
-                                <HStack spacing={2}>
-                                    <Icon as={BiTime} boxSize={3} />
-                                    <Text fontSize="xs">{new Date(selectedAsset.updated_at).toLocaleDateString()}</Text>
-                                </HStack>
-                            </Badge>
+                        <HStack justify="space-between" align="center">
+                            <HStack spacing={4}>
+                                <VStack align="start" spacing={0}>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">TEAM</Text>
+                                    <HStack spacing={1} align="center">
+                                        <Icon as={BiGroup} boxSize={3} color="gray.600" />
+                                        <Text fontSize="sm" fontWeight="medium" color="gray.800">
+                                            {selectedAsset.team_slug}
+                                        </Text>
+                                    </HStack>
+                                </VStack>
+                                
+                                <VStack align="start" spacing={0}>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">ORGANIZATION</Text>
+                                    <HStack spacing={1} align="center">
+                                        <Icon as={BiBuildings} boxSize={3} color="gray.600" />
+                                        <Text fontSize="sm" fontWeight="medium" color="gray.800">
+                                            {selectedAsset.company_slug}
+                                        </Text>
+                                    </HStack>
+                                </VStack>
+                            </HStack>
+                            
+                            <VStack align="end" spacing={0}>
+                                <Text fontSize="xs" color="gray.500" fontWeight="medium">TYPE</Text>
+                                <Badge colorScheme="green" variant="subtle" size="sm">
+                                    {selectedAsset.type}
+                                </Badge>
+                            </VStack>
                         </HStack>
                         
-                        <AssetContentDisplay asset={selectedAsset} />
+                        <HStack justify="space-between" align="center" pt={1}>
+                            <Text fontSize="xs" color="gray.500">
+                                Last updated: {new Date(selectedAsset.updated_at).toLocaleDateString()}
+                            </Text>
+                        </HStack>
                     </VStack>
-                </Box>
+                    
+                    <AssetContentDisplay asset={selectedAsset} />
+                </VStack>
             )}
             
             {/* Empty State */}
             {availableAssets.length === 0 && !assetsLoading && (
-                <Box 
-                    bg="gray.50" 
-                    border="1px solid" 
-                    borderColor="gray.200"
-                    borderRadius="md" 
-                    p={4}
-                    textAlign="center"
-                >
-                    <Text fontSize="sm" color="gray.600" mb={2} fontWeight="medium">
+                <VStack spacing={2} py={8} textAlign="center">
+                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
                         No Assets Available
                     </Text>
-                    <Text fontSize="xs" color="gray.500" lineHeight="1.4">
+                    <Text fontSize="xs" color="gray.500" lineHeight="1.4" maxWidth="300px">
                         Contact MinusX to set up your organization's assets and unlock enhanced AI context capabilities.
                     </Text>
-                </Box>
+                </VStack>
             )}
             
             {/* Loading State */}
             {assetsLoading && availableAssets.length === 0 && (
-                <Box 
-                    bg="gray.50" 
-                    border="1px solid" 
-                    borderColor="gray.200"
-                    borderRadius="md" 
-                    p={4}
-                    textAlign="center"
-                >
-                    <VStack spacing={2}>
-                        <Spinner size="md" color="minusxGreen.500" />
-                        <Text fontSize="sm" color="gray.600">
-                            Loading organization assets...
-                        </Text>
-                    </VStack>
-                </Box>
+                <VStack spacing={3} py={8} textAlign="center">
+                    <Spinner size="md" color="minusxGreen.500" />
+                    <Text fontSize="sm" color="gray.600">
+                        Loading organization assets...
+                    </Text>
+                </VStack>
             )}
             </VStack>
             {!useTeamMemory && (
@@ -229,18 +221,18 @@ export const TeamMemory: React.FC = () => {
 const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
     if (!asset.content) {
         return (
-            <Box bg="blue.50" p={3} borderRadius="md" border="1px solid" borderColor="blue.200">
-                <Text fontSize="xs" color="blue.700" fontWeight="medium" mb={1}>
+            <VStack spacing={2} py={4} align="start">
+                <Text fontSize="xs" color="blue.700" fontWeight="medium">
                     Enhanced Context
                 </Text>
-                <Text fontSize="xs" color="blue.600" lineHeight="1.4">
+                <Text fontSize="xs" color="gray.600" lineHeight="1.4">
                     This asset's context will be included in AI requests to provide more relevant 
                     and accurate responses based on your organization's specific information.
                 </Text>
-                <Text fontSize="xs" color="blue.500" fontStyle="italic" mt={2}>
+                <Text fontSize="xs" color="gray.500" fontStyle="italic">
                     No content available
                 </Text>
-            </Box>
+            </VStack>
         );
     }
 
@@ -249,14 +241,16 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
             // Check if content has the new structure with 'text' and 'entities'
             if (asset.content && typeof asset.content === 'object') {
                 return (
-                    <VStack align="stretch" spacing={3}>
+                    <VStack align="stretch" spacing={4}>
                         {/* Render text as markdown */}
+                        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+                            Text Context
+                        </Text>
                         <Box 
-                            bg="white" 
-                            p={3} 
-                            borderRadius="md" 
                             border="1px solid" 
                             borderColor="gray.200"
+                            borderRadius="md" 
+                            p={3}
                             maxHeight="200px"
                             overflowY="auto"
                         >
@@ -264,27 +258,20 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
                         </Box>
                         
                         {/* Render entities as a list */}
-                        {(
-                            <Box 
-                                bg="gray.50" 
-                                p={3} 
-                                borderRadius="md" 
-                                border="1px solid" 
-                                borderColor="gray.200"
-                            >
-                                <Text fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
+                        {asset.content.entities && asset.content.entities.length > 0 && (
+                            <VStack align="stretch" spacing={3}>
+                                <Text fontSize="sm" fontWeight="semibold" color="gray.700">
                                     Entities ({asset.content.entities.length})
                                 </Text>
                                 <VStack align="stretch" spacing={2} maxHeight="200px" overflowY="auto">
                                     {asset.content.entities.map((entity: any, index: number) => (
                                         <HStack 
                                             key={index}
-                                            bg="white" 
-                                            p={2} 
-                                            borderRadius="sm" 
+                                            p={3}
                                             border="1px solid" 
                                             borderColor="gray.200"
-                                            spacing={2}
+                                            borderRadius="md"
+                                            spacing={3}
                                             justify="flex-start"
                                         >
                                             {entity.name && (
@@ -293,19 +280,19 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
                                                 </Text>
                                             )}
                                             {entity.id && (
-                                                <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                                                <Badge colorScheme="green" variant="subtle" fontSize="xs">
                                                     ID: {entity.id}
                                                 </Badge>
                                             )}
                                             {entity.type && (
-                                                <Badge colorScheme="gray" variant="outline" fontSize="xs">
+                                                <Badge colorScheme="red" variant="subtle" fontSize="xs">
                                                     {entity.type}
                                                 </Badge>
                                             )}
                                         </HStack>
                                     ))}
                                 </VStack>
-                            </Box>
+                            </VStack>
                         )}
                     </VStack>
                 );
@@ -315,7 +302,6 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
             const contentString = JSON.stringify(asset.content, null, 2) || '';
             return (
                 <Box 
-                    bg="white" 
                     p={3} 
                     borderRadius="md" 
                     border="1px solid" 
@@ -341,7 +327,7 @@ const AssetContentDisplay: React.FC<{ asset: any }> = ({ asset }) => {
     };
 
     return (
-        <VStack align="stretch" spacing={2}>
+        <VStack align="stretch" spacing={3}>
             {renderContent()}
             
             <Notify 
