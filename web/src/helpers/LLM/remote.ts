@@ -59,9 +59,10 @@ export async function planActionsRemote({
       }
     }
     
-    // Add selected asset_slug if available
+    // Add selected asset_slug if available and team memory is enabled
     const selectedAssetSlug = currentState.settings.selectedAssetId;
-    if (selectedAssetSlug) {
+    const useTeamMemory = currentState.settings.useTeamMemory;
+    if (selectedAssetSlug && useTeamMemory) {
       // @ts-ignore
       payload.asset_slug = selectedAssetSlug;
       console.log('[minusx] Added asset_slug to request for enhanced context:', selectedAssetSlug);
