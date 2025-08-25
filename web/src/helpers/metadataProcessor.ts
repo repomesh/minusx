@@ -12,7 +12,7 @@ import { get, isEmpty } from 'lodash';
 import { MetadataProcessingResult, MetadataHashInfo, setMetadataHash, setMetadataProcessingCache, clearMetadataProcessingCache } from '../state/settings/reducer';
 import { getState } from '../state/store';
 import { dispatch } from '../state/dispatch';
-import { getAllCardsAndModels, getAllCardsLegacy, getDatabaseTablesAndModelsWithoutFields, getAllFields } from '../../../apps/src/metabase/helpers/metabaseAPIHelpers';
+import { getAllCardsAndModels, getDatabaseTablesAndModelsWithoutFields, getAllFields } from 'apps'
 import { fetchDatabaseFields } from '../../../apps/src/metabase/helpers/metabaseAPI';
 import { getSelectedDbId } from '../../../apps/src/metabase/helpers/metabaseStateAPI';
 import { getModelsWithFields } from '../../../apps/src/metabase/helpers/metabaseModels';
@@ -250,12 +250,12 @@ async function processMetadataWithCaching(
   return currentHash
 }
 
-export async function processAllMetadata(forceRefresh = false) : Promise<MetadataProcessingResult> {
+export async function processAllMetadata(forceRefresh:boolean = false, currentDBId: number) : Promise<MetadataProcessingResult> {
   console.log('[minusx] Starting coordinated metadata processing with parallel API calls...') 
   
   // Step 1: Start all expensive API calls in parallel
   console.log('[minusx] Initiating parallel API calls...')
-  const selectedDbId = await getSelectedDbId()
+  const selectedDbId = currentDBId
   
   if (!selectedDbId) {
     throw new Error('No database selected for metadata processing')
@@ -294,7 +294,7 @@ export async function processAllMetadata(forceRefresh = false) : Promise<Metadat
       
       const [dbSchema, { cards, tables: referencedTables, modelFields }, allFields] = await Promise.all([
         getDatabaseTablesAndModelsWithoutFields(selectedDbId, forceRefresh, forceRefresh),
-        getAllCardsAndModels(forceRefresh),
+        getAllCardsAndModels(forceRefresh, selectedDbId),
         forceRefresh ? fetchDatabaseFields.refresh({ db_id: selectedDbId }) : fetchDatabaseFields({ db_id: selectedDbId })
       ])
       console.log('[minusx] All API calls completed. Processing data...')

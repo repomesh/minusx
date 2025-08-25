@@ -128,11 +128,13 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
   actionController = new MetabaseController(this);
 
   private async triggerMetabaseStateUpdate(url: string, elements: DOMQueryMapResponse) {
-    const queryType = await RPCs.getMetabaseState('qb.card.dataset_query.type') as string;
-    const state = this.useStore().getState();
+    const [queryType, dbId, allDBs] = await Promise.all([
+      RPCs.getMetabaseState('qb.card.dataset_query.type') as Promise<string>,
+      getSelectedDbId(),
+      RPCs.getMetabaseState('entities.databases')
+    ]);
+    
     const getState = this.useStore().getState
-    const dbId = await getSelectedDbId();
-    const allDBs = await RPCs.getMetabaseState('entities.databases') as object;
     const minifiedDBs = Object.values(allDBs || {}).map((db: any) => ({ id: db.id, name: db.name }))
     
     let toolEnabledNew = shouldEnable(elements, url);
@@ -460,7 +462,8 @@ Here's what I need modified:
   }
 
   public async getState(): Promise<MetabaseAppState> {
-    return await convertDOMtoState();
+    const currentDBId = this.useStore().getState().toolContext?.dbId || undefined;
+    return await convertDOMtoState(currentDBId);
   }
 
   public async getPlannerConfig() {
@@ -490,7 +493,7 @@ Here's what I need modified:
       }))
       const isCancelled = () => taskStatus.status === 'cancelled';
       const [relevantTables, dbInfo] = await Promise.all([
-        handlePromise(abortable(getRelevantTablesForSelectedDb(), isCancelled), "Failed to get relevant tables", []),
+        handlePromise(abortable(getRelevantTablesForSelectedDb(dbId), isCancelled), "Failed to get relevant tables", []),
         handlePromise(abortable(getDatabaseTablesAndModelsWithoutFields(dbId), isCancelled), "Failed to get database info", DB_INFO_DEFAULT)
       ])
       state.getState().update((oldState) => ({
@@ -505,7 +508,7 @@ Here's what I need modified:
       // Perf caching
       if (!isCancelled() && dbId !== oldDbId) {
         console.log('Running perf caching')
-        processAllMetadata()
+        processAllMetadata(false, dbId)
         getDatabaseInfo(dbId)
       }
     })

@@ -1,7 +1,6 @@
 import { DashboardInfo, DashboardMetabaseState } from './types';
 import _, { forEach, reduce, template, values } from 'lodash';
 import { MetabaseAppStateDashboard} from '../DOMToState';
-import { getTablesWithFields } from '../getDatabaseSchema';
 import { getAllRelevantModelsForSelectedDb, getDatabaseInfo, getFieldResolvedName } from '../metabaseAPIHelpers';
 import { getDashboardState, getSelectedDbId } from '../metabaseStateAPI';
 import { getParsedIframeInfo, RPCs } from 'web';
@@ -332,14 +331,11 @@ async function substituteParameters(
   return sql;
 };
 
-export async function getDashboardAppState(): Promise<MetabaseAppStateDashboard | null> {
+export async function getDashboardAppState(currentDBId: number): Promise<MetabaseAppStateDashboard | null> {
   const fullUrl = await RPCs.queryURL();
   const url = new URL(fullUrl).origin;
-  const appSettings = RPCs.getAppSettings();
-  const selectedCatalog = get(find(appSettings.availableCatalogs, { name: appSettings.selectedCatalog }), 'content')
-  const dbId = await getSelectedDbId();
+  const dbId = currentDBId
   const selectedDatabaseInfo = dbId ? await getDatabaseInfo(dbId) : undefined
-  const defaultSchema = selectedDatabaseInfo?.default_schema;
   const dashboardMetabaseState: DashboardMetabaseState = await getDashboardState() as DashboardMetabaseState;
   if (!dashboardMetabaseState || !dashboardMetabaseState.dashboards || !dashboardMetabaseState.dashboardId) {
     console.warn('Could not get dashboard info');
@@ -364,12 +360,14 @@ export async function getDashboardAppState(): Promise<MetabaseAppStateDashboard 
     const limitedEntitiesSQL = await getLimitedEntitiesFromQueries(
         filteredCards.flatMap(card => 
             card?.dataset_query?.native?.query ? [card.dataset_query.native.query] : []
-        )
+        ),
+        dbId
     );
     const limitedEntitiesMBQL = await getLimitedEntitiesFromMBQLQueries(
         filteredCards.flatMap(card => 
             card?.dataset_query?.query ? [card.dataset_query.query] : []
-        )
+        ),
+        dbId
     );
     const limitedEntities = [...limitedEntitiesSQL, ...limitedEntitiesMBQL];
     // remove duplicates based on id and type
