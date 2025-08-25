@@ -151,7 +151,7 @@ const initialState: Settings = {
   availableAssets: [],
   selectedAssetId: null,
   assetsLoading: false,
-  useTeamMemory: true,
+  useTeamMemory: false,
 }
 
 export const settingsSlice = createSlice({

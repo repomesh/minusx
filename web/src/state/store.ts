@@ -516,8 +516,12 @@ const migrations = {
   },
   57: (state: RootState) => {
     let newState = {...state}
-    // Migrate metadataHashes from Record<string, number> to Record<string, MetadataHashInfo>
     newState.settings.selectedAssetId = null
+    return newState
+  },
+  58: (state: RootState) => {
+    let newState = {...state}
+    newState.settings.useTeamMemory = false
     return newState
   }
 }
