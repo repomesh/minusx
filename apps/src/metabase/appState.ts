@@ -144,7 +144,7 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
     while (isEmpty(minifiedDBs)) {
       await new Promise(resolve => setTimeout(resolve, 500))
       minifiedDBs = minifyDbs(await RPCs.getMetabaseState('entities.databases'));
-      if (_tries++ > 20) {
+      if (_tries++ > 50) {
         break
       }
     }
