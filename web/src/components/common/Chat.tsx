@@ -219,12 +219,21 @@ const HelperMessage = () => {
 }
 
 export const ChatSection = () => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const thread = useSelector((state: RootState) => state.chat.activeThread)
   const activeThread = useSelector((state: RootState) => state.chat.threads[thread])
   const messages = activeThread.messages
   const tasks = activeThread.tasks
   const url = useAppStore((state) => state.toolContext)?.url || ''
+
+  // Auto-scroll to last message when thread status is not FINISHED (ongoing action)
+  useEffect(() => {
+    if (activeThread.status !== 'FINISHED') {
+      setTimeout(() => {
+        lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [activeThread.status]);
 
   // useEffect(() => {
   //   setTimeout(() => {
@@ -240,7 +249,7 @@ export const ChatSection = () => {
     // if (message.role == 'assistant' && message.content.toolCalls.length == 0) {
     const returnValue = [message]
     if (message.role == 'assistant' && message.content.messageContent && message.content.messageContent.length > 0) {
-      const newMessage = cloneDeep(message)
+      const newMessage = cloneDeep(message) as any
       newMessage.content = {
         type: 'DEFAULT',
         text: message.content.messageContent,
@@ -252,7 +261,9 @@ export const ChatSection = () => {
   })
   const Chats = isEmpty(messagesWithStatus) ?
     (getDemoIDX(url) == -1 ? <HelperMessage /> : <DemoHelperMessage url={url}/>) :
-    messagesWithStatus.map((message, key) => (<Chat key={key} {...message} />))
+    messagesWithStatus.map((message, key) => (
+      <Chat key={key} {...message}/>
+    ))
 
   return (
   <VStack justifyContent="space-between" alignItems="stretch" height={"100%"} width={"100%"}>
@@ -262,8 +273,7 @@ export const ChatSection = () => {
     { !configs.IS_DEV &&  tasks.length && <TasksLite /> }
     {/* { tasks.length && <TasksLite /> } */}
     <OngoingActionStack />
-    <div style={{ height: '10px', width: '100%' }} />
-    <div ref={messagesEndRef} />
+    <div style={{ height: '10px', width: '100%' }} ref={lastMessageRef} />
   </HStack>
   <DemoSuggestions url={url}/>
   </VStack>
