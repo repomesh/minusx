@@ -50,7 +50,7 @@ import { getSelectedDbId, getCurrentUserInfo as getUserInfo, getSnippets, getCur
 import { runSQLQueryFromDashboard, runMBQLQueryFromDashboard } from "./helpers/dashboard/runSqlQueryFromDashboard";
 import { getAllRelevantModelsForSelectedDb, getTableData } from "./helpers/metabaseAPIHelpers";
 import { processSQLWithCtesOrModels, dispatch, updateIsDevToolsOpen, updateDevToolsTabName, addMemory } from "web";
-import { fetchTableMetadata } from "./helpers/metabaseAPI";
+import { fetchTableMetadata, getSQLFromMBQL } from "./helpers/metabaseAPI";
 import { getSourceTableIds } from "./helpers/mbql/utils";
 import { replaceLLMFriendlyIdentifiersInSqlWithModels } from "./helpers/metabaseModels";
 
@@ -584,6 +584,30 @@ export class MetabaseController extends AppController<MetabaseAppState> {
     }
     if (isEmpty(mbql)) {
         actionContent.content = "This MBQL query has errors: " + explanation;
+        return actionContent;
+    }
+
+
+    try {
+        const sqlQuery = await getSQLFromMBQL({
+            database: dbID,
+            type: 'query',
+            query: mbql,
+        });
+        // console.log("Derived SQL query is", sqlQuery);
+    } catch (error) {
+        // console.log('Full error is', error)
+        let errorMessage = error?.response?.message || error.message || 'Unknown error';
+        try {
+            let errorDetails = {}
+            if (errorMessage.includes('DETAILS:')) {
+                errorDetails = JSON.parse(errorMessage.split('DETAILS:')[1]);
+                errorMessage = errorDetails?.message?? 'Error deriving SQL from MBQL';
+            }
+        } catch (e) {
+            console.error('Error while processing error message:', e);
+        }
+        actionContent.content = `<ERROR>Error with the MBQL: ${errorMessage}</ERROR>`;
         return actionContent;
     }
 
