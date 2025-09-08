@@ -66,6 +66,11 @@ const getBaseStyles = () => `
     top: 0;
     left: 0;
   }
+  div.emotion-Modal-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 `;
 
 const getHighlightStyles = () => `
