@@ -111,7 +111,7 @@ body {
   flex: 1;
 }
 
-div.emotion-Modal-root {
+div[class$="Modal-root"] {
   position: absolute;
   top: 0;
   left: 0;
