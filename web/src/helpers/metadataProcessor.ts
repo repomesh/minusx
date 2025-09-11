@@ -7,7 +7,7 @@
 
 import axios from 'axios';
 import { configs } from '../constants';
-import { getOrigin } from './origin';
+import { getParsedIframeInfo } from './origin';
 import { get, isEmpty } from 'lodash';
 import { MetadataProcessingResult, MetadataHashInfo, setMetadataHash, setMetadataProcessingCache, clearMetadataProcessingCache } from '../state/settings/reducer';
 import { getState } from '../state/store';
@@ -26,8 +26,9 @@ export interface MetadataItem {
   database_id?: string;
 }
 
-export interface MetadataRequest {
+interface MetadataRequest {
   origin: string;
+  r: string;
   metadata_items: MetadataItem[];
 }
 
@@ -37,8 +38,10 @@ export interface MetadataRequest {
  * @returns The response from the server
  */
 export async function processMetadata(metadataItems: MetadataItem[]): Promise<any> {
+  const iframeInfo = getParsedIframeInfo()
   const metadataRequest: MetadataRequest = {
-    origin: getOrigin(),
+    origin: iframeInfo.origin,
+    r: iframeInfo.r,
     metadata_items: metadataItems
   };
 
