@@ -56,7 +56,6 @@ async function _init(localConfigs: Promise<object>) {
     console.warn('[minusx] MetabaseBootstrap not found, using window location origin')
   }
   console.log('[minusx] Origin:', origin)
-  const href = window.location.href
   const width = '350'
   const variant = 'default'
 
@@ -64,7 +63,6 @@ async function _init(localConfigs: Promise<object>) {
     tool,
     toolVersion,
     origin,
-    href,
     mode,
     r:extensionId,
     variant,

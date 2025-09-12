@@ -11,7 +11,6 @@ export const defaultIframeInfoWeb: IframeInfoWeb = {
     tool: '',
     toolVersion: '',
     origin: '',
-    href: '',
     mode: '',
     r: '',
     variant: 'default',
