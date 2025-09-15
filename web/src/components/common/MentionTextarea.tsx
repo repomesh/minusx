@@ -17,7 +17,7 @@ interface MentionTextareaProps extends Omit<TextareaProps, 'onChange'> {
 }
 
 export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
-  ({ mentionItems, value, onChange, onKeyDown, placeholder = 'Ask Anything!', ...props }, ref) => {
+  ({ mentionItems, value, onChange, onKeyDown, placeholder, ...props }, ref) => {
     const editableRef = useRef<HTMLDivElement>(null)
     const [showDropdown, setShowDropdown] = useState(false)
     const [filteredItems, setFilteredItems] = useState<MentionItem[]>([])
@@ -26,6 +26,20 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const [mentionQuery, setMentionQuery] = useState('')
     const [mentionStart, setMentionStart] = useState(-1)
     const typingTimerRef = useRef<NodeJS.Timeout>()
+
+    // Rotating placeholder
+    const [placeholderIndex, setPlaceholderIndex] = useState(0)
+    const placeholders = ['Ask Anything!', 'Tip: Use @ to mention tables and models']
+    
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setPlaceholderIndex(prev => (prev + 1) % placeholders.length)
+      }, 10000)
+      
+      return () => clearInterval(interval)
+    }, [])
+
+    const currentPlaceholder = placeholder || placeholders[placeholderIndex]
 
     // Forward ref to the contenteditable div
     useImperativeHandle(ref, () => editableRef.current!, [])
@@ -306,7 +320,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
             textAlign="left"
             _empty={{
               _before: {
-                content: `"${placeholder}"`,
+                content: `"${currentPlaceholder}"`,
                 color: 'gray.400',
                 pointerEvents: 'none'
               }
