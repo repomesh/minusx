@@ -22,7 +22,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const [showDropdown, setShowDropdown] = useState(false)
     const [filteredItems, setFilteredItems] = useState<MentionItem[]>([])
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+    const [dropdownPosition] = useState({ bottom: 100, left: 0 })
     const [mentionQuery, setMentionQuery] = useState('')
     const [mentionStart, setMentionStart] = useState(-1)
     const typingTimerRef = useRef<NodeJS.Timeout>()
@@ -35,21 +35,6 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       () => debounce((query: string) => {
         const filtered = filterMentionItems(mentionItems, query)
         setFilteredItems(filtered)
-        
-        // Calculate dropdown position after filtering
-        setTimeout(() => {
-          const itemHeight = 80 // Updated for 4-line items (name + type + description + schema/collection)
-          const maxItems = 6
-          const actualItems = Math.min(filtered.length, maxItems)
-          const dropdownHeight = actualItems * itemHeight + 10
-          
-          const position = {
-            top: -(dropdownHeight + 5),
-            left: 0
-          }
-          
-          setDropdownPosition(position)
-        }, 0)
       }, 150),
       [mentionItems]
     )

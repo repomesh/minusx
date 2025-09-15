@@ -12,7 +12,7 @@ export interface MentionDropdownProps {
   selectedIndex: number
   onSelect: (item: MentionItem) => void
   onClose: () => void
-  position: { top: number; left: number }
+  position: { top?: number; bottom?: number; left: number }
   visible: boolean
 }
 
@@ -36,7 +36,8 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
   return (
     <Box
       position="absolute"
-      top={`${position.top}px`}
+      bottom={position.bottom ? `${position.bottom}px` : undefined}
+      top={position.top ? `${position.top}px` : undefined}
       left={`${position.left}px`}
       zIndex={1000}
       bg={bgColor}
