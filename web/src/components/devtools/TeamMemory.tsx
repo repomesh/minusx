@@ -232,7 +232,7 @@ export const TeamMemory: React.FC = () => {
             </VStack>
             {!useTeamMemory && (
                 <DisabledOverlay 
-                    toolEnabledReason="Turn on the **USE TEAM MEMORY** switch above to let MinusX use your organization's assets and team context." 
+                    toolEnabledReason="Turn on the **USE TEAM MEMORY** switch above to use your organization's assets and team context." 
                     local={true}
                 />
             )}

@@ -113,7 +113,7 @@ export const MinusXMD: React.FC = () => {
             <AdditionalContext />
             {!useMemory && (
                 <DisabledOverlay 
-                    toolEnabledReason="Turn on the **USE MEMORY** switch above to let MinusX use your memories and preferences in context." 
+                    toolEnabledReason="Turn on the **USE MEMORY** switch above to use your memories and preferences in context." 
                     local={true}
                 />
             )}
