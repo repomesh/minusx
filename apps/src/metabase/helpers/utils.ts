@@ -144,7 +144,8 @@ export async function getLimitedEntities(sqlQuery: string, currentDBId: number):
   });
   
   const allModels = dbId ? await getAllRelevantModelsForSelectedDb(dbId) : [];
-  const relevantModels = await getSelectedAndRelevantModels(sqlQuery || "", appSettings.selectedModels, allModels);
+  const selectedModels = appSettings.selectedModels.filter(model => model.dbId === dbId);
+  const relevantModels = await getSelectedAndRelevantModels(sqlQuery || "", selectedModels, allModels);
 
   return getCombinedTablesAndModels(relevantTablesWithFields, relevantModels, 'SQL');
 }
