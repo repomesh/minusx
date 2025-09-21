@@ -5,7 +5,7 @@
  * from metabaseAPI.ts and state functions from metabaseStateAPI.ts.
  */
 
-import _, { map, get, isEmpty, flatMap, filter, sortBy, reverse, pick, omit, partition } from 'lodash';
+import _, { map, get, isEmpty, flatMap, filter, sortBy, reverse, pick } from 'lodash';
 import { getTablesFromSqlRegex, TableAndSchema } from './parseSql';
 import { handlePromise, deterministicSample } from '../../common/utils';
 import { getCurrentUserInfo, getSelectedDbId } from './metabaseStateAPI';
@@ -225,37 +225,39 @@ export async function getAllCardsAndModels(forceRefresh = false, currentDBId: nu
   
   
   console.log('[minusx] Non model cards:', filteredCards.length);
-  // Calculate relevancy score and sort by it
-  const cardsWithRelevancy = filteredCards.map((card) => {
-    const viewCount = get(card, 'view_count') || 0;
-    const lastUsedAt = get(card, 'last_used_at');
-    
-    let daysAgo = 0;
-    if (lastUsedAt) {
-      const lastUsedDate = new Date(lastUsedAt);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - lastUsedDate.getTime());
-      daysAgo = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-    
-    const relevancy = viewCount - daysAgo;
-    
-    return {
-      ...card,
-      relevancy
-    };
-  });
-  
-  // Sort by relevancy descending
-  const sortedCards = reverse(sortBy(cardsWithRelevancy, 'relevancy'));
 
-  // Limit to 2000 cards
-  // if (sortedCards.length > 2000) {
-  //   sortedCards.length = 2000;
-  // }
+  // Sort all cards by view_count descending
+  const cardsSortedByViews = reverse(sortBy(filteredCards, (card) => get(card, 'view_count') || 0));
 
-  // Remove the relevancy property before processing since it's not part of the card schema
-  const cardsForProcessing = sortedCards.map(card => omit(card, ['relevancy']));
+  let finalCards: any[];
+
+  if (cardsSortedByViews.length > 7000) {
+    console.log('[minusx] More than 7000 cards, applying selective filtering');
+
+    // Take top 5000 cards by view count
+    const top5000Cards = cardsSortedByViews.slice(0, 5000);
+
+    // Get remaining cards sorted by creation date (newest first)
+    const remainingCards = cardsSortedByViews.slice(5000);
+    const recentlyCreatedCards = remainingCards
+      .sort((a, b) => {
+        const dateA = new Date(get(a, 'created_at') || 0);
+        const dateB = new Date(get(b, 'created_at') || 0);
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      });
+
+    // Take up to 2000 most recently created cards
+    const additionalCards = recentlyCreatedCards.slice(0, 2000);
+
+    finalCards = [...top5000Cards, ...additionalCards];
+    console.log('[minusx] Selected cards: top 5000 by views + ' + additionalCards.length + ' recently created cards');
+  } else {
+    // If <= 7000 cards, use all cards sorted by view count
+    finalCards = cardsSortedByViews;
+    console.log('[minusx] Using all cards (≤ 7000), sorted by view count');
+  }
+
+  const cardsForProcessing = finalCards;
   const processedCards = map(cardsForProcessing, processCard);
 
   console.log('Processed cards:', processedCards);
