@@ -39,7 +39,7 @@ export const DemoSuggestions = ({url}: {url: string}) => {
                          (availableAssets.length > 0 ? availableAssets[0] : null)
 
     const personalQuestions = showSavedQuestions ? savedQuestions : []
-    const teamQuestions = (selectedAsset && useTeamMemory && selectedAsset.content?.isActive) ? selectedAsset.content?.questions?.filter(q => q.is_published && url.includes(new URL(q.source_url).pathname)).map(q => q.content) : []
+    const teamQuestions = (selectedAsset && useTeamMemory && selectedAsset.content?.isActive) ? selectedAsset.content?.questions?.filter(q => q.is_published && url.includes(new URL(q.source_url).pathname)).map(q => q.content) || [] : []
     const allQuestions = [...personalQuestions, ...teamQuestions]
         
 
