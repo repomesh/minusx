@@ -544,6 +544,13 @@ const migrations = {
     // Add savedQuestions to settings
     newState.settings.savedQuestions = []
     return newState
+  },
+  61: (state: RootState) => {
+    let newState = {...state}
+    // Set manuallyLimitContext to false and useTeamMemory to true
+    newState.settings.manuallyLimitContext = false
+    newState.settings.useTeamMemory = true
+    return newState
   }
 }
 
@@ -551,7 +558,7 @@ const BLACKLIST = ['billing', 'cache', userStateApi.reducerPath, atlasApi.reduce
 
 const persistConfig = {
   key: 'root',
-  version: 60,
+  version: 61,
   storage,
   blacklist: BLACKLIST,
   // @ts-ignore
