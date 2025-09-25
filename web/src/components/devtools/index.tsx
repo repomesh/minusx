@@ -36,12 +36,12 @@ const Monitors: MonitorDef[] = [
     icon: BiCog,
     tags: ['production']
   },
-  {
-    title: "Context",
-    component: Context,
-    icon: BiTable,
-    tags: ['production']
-  },
+  // {
+  //   title: "Context",
+  //   component: Context,
+  //   icon: BiTable,
+  //   tags: ['production']
+  // },
   {
     title: "Memory",
     component: MinusXMD,

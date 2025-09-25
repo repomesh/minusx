@@ -5,7 +5,7 @@ import { updateIsLocal, updateIsDevToolsOpen, updateUploadLogs, updateDevToolsTa
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { configs } from '../../constants';
-import { BiCode, BiLinkExternal, BiWorld } from 'react-icons/bi'
+import { BiCode, BiLinkExternal, BiWorld, BiSync } from 'react-icons/bi'
 import { setMinusxMode } from '../../app/rpc';
 import { BsDiscord } from "react-icons/bs";
 import { PortalButton, SubscribeButton, PricingPlans } from '../common/Subscription';
@@ -19,6 +19,10 @@ import { SupportButton } from '../common/Support'
 import { useGetUserStateQuery } from '../../app/api/userStateApi'
 import { BiBookBookmark } from 'react-icons/bi'
 import { getParsedIframeInfo } from '../../helpers/origin'
+import { fetchModelInfo, getDatabaseTablesAndModelsWithoutFields } from "apps";
+import { processAllMetadata } from "../../helpers/metadataProcessor";
+import { MetabaseContext } from 'apps/types';
+import { isEmpty } from "lodash";
 
 export const TelemetryToggle = ({color}:{color: 'minusxBW.800' | 'minusxBW.50'}) => {
   const uploadLogs = useSelector((state: RootState) => state.settings.uploadLogs)
@@ -81,10 +85,39 @@ const SettingsPage = () => {
   const enableUserDebugTools = useSelector((state: RootState) => state.settings.enableUserDebugTools)
   const enableReviews = useSelector((state: RootState) => state.settings.enableReviews)
   const useV2States = useSelector((state: RootState) => state.settings.useV2States)
+  const metadataProcessingCache = useSelector((state: RootState) => state.settings.metadataProcessingCache)
   const isSubscribedOrEnterpriseCustomer = billing.isSubscribed || billing.isEnterpriseCustomer
+
+  const toolContext: MetabaseContext = useAppStore((state) => state.toolContext)
+  const dbInfo = toolContext.dbInfo
   const resetStateFull= () => {
     resetState()
     setMinusxMode('open-sidepanel')
+  }
+
+  const syncModels = async () => {
+    const currentDbId = toolContext.dbId
+    if (!currentDbId) return
+
+    const appState = useAppStore.getState()
+
+    try {
+      const updatedDbInfo = await getDatabaseTablesAndModelsWithoutFields(currentDbId, true)
+
+      appState.update((oldState) => ({
+        ...oldState,
+        toolContext: {
+          ...oldState.toolContext,
+          dbInfo: updatedDbInfo,
+          loading: false
+        }
+      }))
+      // invalidate cache for model info as well
+      const modelIds = updatedDbInfo.models.map((model) => model.modelId)
+      const allPromises = modelIds.map((modelId) => fetchModelInfo.invalidate({model_id: modelId}))
+      await Promise.all(allPromises)
+    } catch (error) {
+    }
   }
 
   const reloadBillingInfo = async () => {
@@ -195,11 +228,23 @@ const SettingsPage = () => {
         </VStack>
       </SettingsBlock>
       <SettingsBlock title='Quick Links' ariaLabel='quick-actions'>
-            <HStack justifyContent={"center"} flexWrap={"wrap"} gap={1}>
-            { <Button size="sm" leftIcon={<BiBookBookmark size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://docs.minusx.ai/en/collections/10790008-minusx-in-metabase" target="_blank">Docs</Button> }
-            { <Button size="sm" leftIcon={<BiWorld size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://atlas.minusx.ai" target="_blank">Atlas</Button> }
-            { <Button size="sm" leftIcon={<BiCode size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://minusx.ai/blog" target="_blank">Blog</Button> }
-            </HStack>
+            <VStack spacing={3}>
+              <HStack justifyContent={"center"} flexWrap={"wrap"} gap={1}>
+                { <Button size="sm" leftIcon={<BiBookBookmark size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://docs.minusx.ai/en/collections/10790008-minusx-in-metabase" target="_blank">Docs</Button> }
+                { <Button size="sm" leftIcon={<BiWorld size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://atlas.minusx.ai" target="_blank">Atlas</Button> }
+                { <Button size="sm" leftIcon={<BiCode size={14}/>} colorScheme="minusxGreen" variant="solid" as="a" href="https://minusx.ai/blog" target="_blank">Blog</Button> }
+                { <Button size="sm" leftIcon={<BiSync size={14}/>} colorScheme="minusxGreen" variant="solid" onClick={() => {
+                  syncModels()
+                  if (toolContext?.dbId) {
+                    processAllMetadata(true, toolContext.dbId)
+                  }
+                }}>Resync</Button> }
+              </HStack>
+              { isEmpty(metadataProcessingCache[dbInfo?.id]) ?
+                <Text fontSize={"xs"} color={"minusxBW.600"}>Syncing...</Text> :
+                <Text fontSize={"xs"} color={"minusxGreen.600"}>Last synced: {new Date(metadataProcessingCache[dbInfo?.id].timestamp).toLocaleString()}</Text>
+              }
+            </VStack>
         </SettingsBlock>
       {/* <SettingsBlock title="Analytics Tools">
         <VStack alignItems={"stretch"}>

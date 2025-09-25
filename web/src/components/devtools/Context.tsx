@@ -56,7 +56,7 @@ export const Context: React.FC = () => {
 
     return (
         <VStack spacing={6} align="stretch">
-            {/* <HStack justify="space-between" align="center">
+            <HStack justify="space-between" align="center">
                 <Text fontSize="2xl" fontWeight="bold">Context</Text>
                 <HStack spacing={3} align="center">
                     <HStack spacing={2} align="center">
@@ -81,7 +81,7 @@ export const Context: React.FC = () => {
                         local={true}
                     />
                 )}
-            </Box> */}
+            </Box>
             <VStack justifyContent={"flex-end"}>
                 { isEmpty(metadataProcessingCache[dbInfo.id]) ? <Text>Syncing...</Text> : <Text fontSize={"xs"} color={"minusxGreen.600"}>Last synced: {new Date(metadataProcessingCache[dbInfo.id].timestamp).toLocaleString()}</Text> }
                 <Button size={'sm'} colorScheme="minusxGreen" onClick={() => {
