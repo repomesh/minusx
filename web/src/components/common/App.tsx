@@ -442,6 +442,7 @@ const AppBody = forwardRef((_props, ref) => {
           }
           if (email != currentEmail) {
             resetState()
+            setMinusxMode('open-sidepanel')
           }
           dispatch(login({
             session_jwt,
