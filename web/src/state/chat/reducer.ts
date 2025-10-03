@@ -135,7 +135,7 @@ export interface Task {
   parent_id: number | null;
   run_id: string;
   debug: any;
-  child_ids: number[];
+  child_ids: Array<number[]>;
   result: any; // Key field for completion status
 }
 
@@ -238,6 +238,17 @@ const taskResultToContent = (task: Task): ActionChatMessageContent => {
     ? task.result 
     : JSON.stringify(task.result)
     
+  if (task.agent == "TalkToUser") {
+    return {
+      type: 'DEFAULT',
+      text: content,
+      images: [],
+      renderInfo: {
+        text: content,
+        code: undefined,
+      }
+    }
+  }
   return {
     type: 'BLANK',
     content,
