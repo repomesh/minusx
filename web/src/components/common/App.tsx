@@ -46,7 +46,7 @@ import { SupportButton } from './Support'
 import { Markdown } from './Markdown'
 import { getMXToken, setMinusxMode, toggleMinusXRoot } from '../../app/rpc'
 import { configs } from '../../constants'
-import { abortPlan, startNewThread, updateThreadID } from '../../state/chat/reducer'
+import { abortPlan, startNewThread, updateThreadID, setPlanningMessage, appendStreamingContent } from '../../state/chat/reducer'
 import { intelligentThreadStart } from '../../helpers/threadHistory'
 
 // Agent constants
@@ -192,22 +192,31 @@ const AppLoggedIn = forwardRef((_props, ref) => {
   }, [atlasData, atlasLoading, atlasError])
 
   // Disabling sockets for now
-  // useSocketIO({
-  //   sessionToken: sessionJwt,
-  //   onMessage: (message) => {
-  //     console.log('Socket.io message received:', message);
-  //   },
-  //   onConnect: () => {
-  //     console.log('Socket.io connected successfully');
-  //   },
-  //   onDisconnect: (reason) => {
-  //     console.log('Socket.io disconnected:', reason);
-  //   },
-  //   onError: (error) => {
-  //     console.log(error.message)
-  //     console.error('Socket.io connection error:', error);
-  //   }
-  // });
+  useSocketIO({
+    sessionToken: sessionJwt,
+    onMessage: (message) => {
+      console.log('Socket.io message received:', message);
+      // Handle planning messages
+      if (message?.type === 'message' && message?.content?.agent) {
+        const agentName = message.content.agent;
+        dispatch(setPlanningMessage(`Running ${agentName}`));
+      }
+      // Handle streaming content chunks
+      if (message?.type === 'content' && message?.id && message?.content) {
+        dispatch(appendStreamingContent({ id: message.id, chunk: message.content }));
+      }
+    },
+    onConnect: () => {
+      console.log('Socket.io connected successfully');
+    },
+    onDisconnect: (reason) => {
+      console.log('Socket.io disconnected:', reason);
+    },
+    onError: (error) => {
+      console.log(error.message)
+      console.error('Socket.io connection error:', error);
+    }
+  });
 
   // Update thread id on start
   useEffect(() => {

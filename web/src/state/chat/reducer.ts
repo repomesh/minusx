@@ -153,6 +153,8 @@ export interface ChatThread {
   interrupted: boolean
   tasks: Tasks
   id: string
+  planningMessage?: string
+  streamingContents?: Array<{ id: string, text: string }>
 }
 
 interface ChatState {
@@ -735,7 +737,14 @@ export const chatSlice = createSlice({
       activeThread.debugChatIndex = action.payload
     },
     setActiveThreadStatus: (state, action: PayloadAction<ChatThreadStatus>) => {
-      state.threads[state.activeThread].status = action.payload
+      const activeThread = state.threads[state.activeThread]
+      const oldStatus = activeThread.status
+      activeThread.status = action.payload
+      // Clear planning data when leaving PLANNING status
+      if (oldStatus === 'PLANNING' && action.payload !== 'PLANNING') {
+        activeThread.planningMessage = undefined
+        activeThread.streamingContents = undefined
+      }
     },
     toggleUserConfirmation: (state, action: PayloadAction<{
       show: boolean
@@ -884,11 +893,43 @@ export const chatSlice = createSlice({
         console.error('Error cloning thread from history:', error)
         // Don't change state on error - let existing thread remain active
       }
+    },
+    setPlanningMessage: (state, action: PayloadAction<string>) => {
+      const activeThread = getActiveThread(state)
+      activeThread.planningMessage = action.payload
+    },
+    clearPlanningMessage: (state) => {
+      const activeThread = getActiveThread(state)
+      activeThread.planningMessage = undefined
+    },
+    appendStreamingContent: (state, action: PayloadAction<{ id: string, chunk: string }>) => {
+      const activeThread = getActiveThread(state)
+      const { id, chunk } = action.payload
+
+      // Initialize array if needed
+      if (!activeThread.streamingContents) {
+        activeThread.streamingContents = []
+      }
+
+      // Find existing entry by id
+      const existingEntry = activeThread.streamingContents.find(entry => entry.id === id)
+
+      if (existingEntry) {
+        // Append chunk to existing entry
+        existingEntry.text += chunk
+      } else {
+        // Add new entry
+        activeThread.streamingContents.push({ id, text: chunk })
+      }
+    },
+    clearStreamingContent: (state) => {
+      const activeThread = getActiveThread(state)
+      activeThread.streamingContents = undefined
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { addUserMessage, deleteUserMessage, addActionPlanMessage, addActionPlanMessageV2, startAction, finishAction, interruptPlan, startNewThread, addReaction, removeReaction, updateDebugChatIndex, setActiveThreadStatus, toggleUserConfirmation, setUserConfirmationInput, toggleClarification, setClarificationAnswer, switchToThread, abortPlan, updateThreadID, updateLastWarmedOn, clearTasks, cloneThreadFromHistory, setUserConfirmationFeedback } = chatSlice.actions
+export const { addUserMessage, deleteUserMessage, addActionPlanMessage, addActionPlanMessageV2, startAction, finishAction, interruptPlan, startNewThread, addReaction, removeReaction, updateDebugChatIndex, setActiveThreadStatus, toggleUserConfirmation, setUserConfirmationInput, toggleClarification, setClarificationAnswer, switchToThread, abortPlan, updateThreadID, updateLastWarmedOn, clearTasks, cloneThreadFromHistory, setUserConfirmationFeedback, setPlanningMessage, clearPlanningMessage, appendStreamingContent, clearStreamingContent } = chatSlice.actions
 
 export default chatSlice.reducer

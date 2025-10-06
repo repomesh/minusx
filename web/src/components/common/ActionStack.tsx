@@ -313,7 +313,10 @@ const PlanningActionStack: React.FC = () => {
   const metadataProcessingCache = useSelector((state: RootState) => state.settings.metadataProcessingCache)
   const isAnalystmode = useSelector((state: RootState) => state.settings.analystMode) || false;
   const dbMetadata = get(metadataProcessingCache, [dbId, 'result'], null);
-  
+  const thread = useSelector((state: RootState) => state.chat.activeThread)
+  const planningMessage = useSelector((state: RootState) => state.chat.threads[thread].planningMessage)
+  const streamingContents = useSelector((state: RootState) => state.chat.threads[thread].streamingContents)
+
   const planningActions = isEmpty(dbMetadata) && isAnalystmode
       ? ['One time optimizations underway']
       : ['Planning next steps', 'Thinking about the question', 'Understanding App state', 'Finalizing Actions', 'Validating Answers']
@@ -325,8 +328,11 @@ const PlanningActionStack: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Use socket planning message if available, otherwise cycle through default messages
+  const displayMessage = planningMessage || planningActions[currentTitleIndex % planningActions.length]
+
   return (
-  <HStack aria-label={"planning"} className={'action-stack'} justifyContent={'start'} width={"100%"}>
+  <VStack aria-label={"planning"} className={'action-stack'} justifyContent={'start'} width={"100%"} spacing={2}>
     <Box
       bg={'minusxGreen.800'}
       p={2}
@@ -339,10 +345,31 @@ const PlanningActionStack: React.FC = () => {
     >
       <HStack>
         <Box>
-          <Text key={currentTitleIndex} animation={currentTitleIndex > 0 ? `${scrollUp} 0.5s ease-in-out` : ""} >{planningActions[currentTitleIndex % planningActions.length]}</Text>
+          <Text key={planningMessage || currentTitleIndex} animation={currentTitleIndex > 0 ? `${scrollUp} 0.5s ease-in-out` : ""} >{displayMessage}</Text>
         </Box>
         <Spinner size="xs" speed={'0.75s'} color="minusxBW.100" aria-label={"planning-spinner"}/>
       </HStack>
     </Box>
-  </HStack>
+    {streamingContents?.map((streamingContent) => (
+      <Box
+        key={streamingContent.id}
+        bg={'minusxGreen.800'}
+        p={3}
+        borderRadius={'10px 10px 10px 0'}
+        color={'minusxBW.50'}
+        width={"90%"}
+        alignSelf={'flex-start'}
+        aria-label={"streaming-content-bubble"}
+      >
+        <ChatContent
+          content={{
+            type: 'DEFAULT',
+            text: streamingContent.text,
+            images: [],
+          }}
+          role="assistant"
+        />
+      </Box>
+    ))}
+  </VStack>
 )}
