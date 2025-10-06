@@ -551,6 +551,24 @@ const migrations = {
     newState.settings.manuallyLimitContext = false
     newState.settings.useTeamMemory = true
     return newState
+  },
+  62: (state: RootState) => {
+    let newState = {...state}
+    // Add tasks_id to all user messages
+    newState.chat.threads.forEach((thread) => {
+      thread.messages.forEach((message) => {
+        if (message.role === 'user') {
+          (message as any).tasks_id = null
+        }
+      })
+    })
+    return newState
+  },
+  63: (state: RootState) => {
+    let newState = {...state}
+    // Add useV2API flag for v2 chat planner API
+    newState.settings.useV2API = false
+    return newState
   }
 }
 
@@ -558,7 +576,7 @@ const BLACKLIST = ['billing', 'cache', userStateApi.reducerPath, atlasApi.reduce
 
 const persistConfig = {
   key: 'root',
-  version: 61,
+  version: 63,
   storage,
   blacklist: BLACKLIST,
   // @ts-ignore

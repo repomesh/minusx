@@ -13,10 +13,46 @@ import { getParsedIframeInfo } from '../helpers/origin';
 import { configs } from '../constants';
 export const plannerListener = createListenerMiddleware();
 function shouldContinue(getState: () => RootState) {
-  const thread = getState().chat.activeThread
-  const activeThread = getState().chat.threads[thread]
+  const state = getState()
+  const thread = state.chat.activeThread
+  const activeThread = state.chat.threads[thread]
   const messageHistory = activeThread.messages
   const lastMessage = messageHistory[messageHistory.length - 1]
+
+  // For V2 API: check if should continue
+  const useV2Api = state.settings.useV2API && state.settings.drMode
+  if (useV2Api) {
+    // Check if there are any unfinished tool messages (TODO status)
+    const hasUnfinishedTools = messageHistory.some(
+      (msg) => msg.role === 'tool' && !msg.action.finished
+    )
+
+    // If there are unfinished tools, continue to execute them
+    if (hasUnfinishedTools) {
+      return true
+    }
+
+    // Find the last assistant message to check its source
+    const lastAssistantMsg = messageHistory.findLast(
+      (msg) => msg.role === 'assistant' && msg.content.type === 'ACTIONS'
+    )
+
+    if (lastAssistantMsg && lastAssistantMsg.role === 'assistant' && lastAssistantMsg.content.type === 'ACTIONS') {
+      // If tools came from pending (we executed them), send results back to server
+      if (lastAssistantMsg.content.source === 'pending') {
+        return true
+      }
+      // If tools came from completed (server sent them), stop (no more work)
+      if (lastAssistantMsg.content.source === 'completed') {
+        return false
+      }
+    }
+
+    // Default: stop
+    return false
+  }
+
+  // For V1 API: existing logic
   // check if there are 0 tool calls in the last assistant message. if so, we don't continue
   if (lastMessage.role == 'assistant' && lastMessage.content.toolCalls.length == 0) {
     return false
@@ -25,7 +61,7 @@ function shouldContinue(getState: () => RootState) {
   if (lastMessage.role == 'tool' && (lastMessage.action.function.name == 'markTaskDone' || lastMessage.action.function.name == 'UpdateTaskStatus')) {
     return false;
   } else {
-    // if last tool was not respondToUser, we continue anyway. not sure if we should keep it this way? 
+    // if last tool was not respondToUser, we continue anyway. not sure if we should keep it this way?
     return true
   }
 }
