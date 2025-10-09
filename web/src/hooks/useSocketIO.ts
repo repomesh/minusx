@@ -40,8 +40,10 @@ export function useSocketIO({
         token: sessionToken
       },
       reconnection: true,
-      reconnectionAttempts: 2,
-      reconnectionDelay: 10000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
       transports: ['websocket'],
       timeout: 20000,
       path: configs.SOCKET_ENDPOINT
