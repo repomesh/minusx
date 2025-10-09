@@ -23,14 +23,15 @@ export function useSocketIO({
     // Only connect if we have a session token
     if (!sessionToken) {
       // Disconnect if we're connected but no longer have a token
-      if (socketRef.current?.connected) {
+      if (socketRef.current) {
         socketRef.current.disconnect();
+        socketRef.current = null;
       }
       return;
     }
 
-    // Don't reconnect if already connected with the same token
-    if (socketRef.current?.connected) {
+    // Don't reconnect if a socket already exists (connected or connecting)
+    if (socketRef.current) {
       return;
     }
 
@@ -43,8 +44,7 @@ export function useSocketIO({
       reconnectionDelay: 10000,
       transports: ['polling', 'websocket'],
       timeout: 20000,
-      path: configs.SOCKET_ENDPOINT,
-      forceNew: true  // Force new connection to prevent reusing stale connections
+      path: configs.SOCKET_ENDPOINT
     });
 
     socketRef.current = socket;
