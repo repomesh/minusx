@@ -46,7 +46,7 @@ import { SupportButton } from './Support'
 import { Markdown } from './Markdown'
 import { getMXToken, setMinusxMode, toggleMinusXRoot } from '../../app/rpc'
 import { configs } from '../../constants'
-import { abortPlan, startNewThread, updateThreadID, setPlanningMessage, appendStreamingContent } from '../../state/chat/reducer'
+import { abortPlan, startNewThread, updateThreadID, setPlanningMessage, appendStreamingContent, appendStreamingToolCall } from '../../state/chat/reducer'
 import { intelligentThreadStart } from '../../helpers/threadHistory'
 
 // Agent constants
@@ -204,6 +204,14 @@ const AppLoggedIn = forwardRef((_props, ref) => {
         const agentName = message.content.agent;
         dispatch(setPlanningMessage({
           message: `Running ${agentName}`,
+          conversationID: message.conversationID
+        }));
+        // Also store as a streaming tool call
+        dispatch(appendStreamingToolCall({
+          id: message.id || `tool-${Date.now()}`,
+          agentName: agentName,
+          status: 'DOING',
+          finished: false,
           conversationID: message.conversationID
         }));
       }

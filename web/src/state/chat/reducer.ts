@@ -143,6 +143,22 @@ export interface Task {
 
 export type Tasks = Array<Task>
 
+export interface StreamingToolCall {
+  id: string
+  agentName: string
+  status: 'DOING' | 'SUCCESS' | 'FAILURE'
+  finished: boolean
+  conversationID: string
+  timestamp: number
+}
+
+export interface StreamingContent {
+  id: string
+  text: string
+  conversationID: string
+  timestamp: number
+}
+
 export interface ChatThread {
   index: number
   debugChatIndex: number
@@ -154,7 +170,8 @@ export interface ChatThread {
   tasks: Tasks
   id: string
   planningMessage?: { message: string, conversationID: string }
-  streamingContents?: Array<{ id: string, text: string, conversationID: string }>
+  streamingContents?: Array<StreamingContent>
+  streamingToolCalls?: Array<StreamingToolCall>
 }
 
 interface ChatState {
@@ -746,6 +763,7 @@ export const chatSlice = createSlice({
       if (oldStatus === 'PLANNING' && action.payload !== 'PLANNING') {
         activeThread.planningMessage = undefined
         activeThread.streamingContents = undefined
+        activeThread.streamingToolCalls = undefined
       }
     },
     toggleUserConfirmation: (state, action: PayloadAction<{
@@ -926,21 +944,52 @@ export const chatSlice = createSlice({
       const existingEntry = targetThread.streamingContents.find(entry => entry.id === id)
 
       if (existingEntry) {
-        // Append chunk to existing entry
+        // Append chunk to existing entry (keep original timestamp)
         existingEntry.text += chunk
       } else {
-        // Add new entry
-        targetThread.streamingContents.push({ id, text: chunk, conversationID })
+        // Add new entry with current timestamp
+        targetThread.streamingContents.push({ id, text: chunk, conversationID, timestamp: Date.now() })
       }
     },
     clearStreamingContent: (state) => {
       const activeThread = getActiveThread(state)
       activeThread.streamingContents = undefined
+    },
+    appendStreamingToolCall: (state, action: PayloadAction<{ id: string, agentName: string, status: 'DOING' | 'SUCCESS' | 'FAILURE', finished: boolean, conversationID: string }>) => {
+      const { id, agentName, status, finished, conversationID } = action.payload
+
+      // Find the thread with matching conversationID
+      const targetThread = state.threads.find(thread => thread.id === conversationID)
+      if (!targetThread) {
+        return
+      }
+
+      // Initialize array if needed
+      if (!targetThread.streamingToolCalls) {
+        targetThread.streamingToolCalls = []
+      }
+
+      // Find existing entry by id
+      const existingEntry = targetThread.streamingToolCalls.find(entry => entry.id === id)
+
+      if (existingEntry) {
+        // Update existing entry (keep original timestamp)
+        existingEntry.agentName = agentName
+        existingEntry.status = status
+        existingEntry.finished = finished
+      } else {
+        // Add new entry with current timestamp
+        targetThread.streamingToolCalls.push({ id, agentName, status, finished, conversationID, timestamp: Date.now() })
+      }
+    },
+    clearStreamingToolCalls: (state) => {
+      const activeThread = getActiveThread(state)
+      activeThread.streamingToolCalls = undefined
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { addUserMessage, deleteUserMessage, addActionPlanMessage, addActionPlanMessageV2, startAction, finishAction, interruptPlan, startNewThread, addReaction, removeReaction, updateDebugChatIndex, setActiveThreadStatus, toggleUserConfirmation, setUserConfirmationInput, toggleClarification, setClarificationAnswer, switchToThread, abortPlan, updateThreadID, updateLastWarmedOn, clearTasks, cloneThreadFromHistory, setUserConfirmationFeedback, setPlanningMessage, clearPlanningMessage, appendStreamingContent, clearStreamingContent } = chatSlice.actions
+export const { addUserMessage, deleteUserMessage, addActionPlanMessage, addActionPlanMessageV2, startAction, finishAction, interruptPlan, startNewThread, addReaction, removeReaction, updateDebugChatIndex, setActiveThreadStatus, toggleUserConfirmation, setUserConfirmationInput, toggleClarification, setClarificationAnswer, switchToThread, abortPlan, updateThreadID, updateLastWarmedOn, clearTasks, cloneThreadFromHistory, setUserConfirmationFeedback, setPlanningMessage, clearPlanningMessage, appendStreamingContent, clearStreamingContent, appendStreamingToolCall, clearStreamingToolCalls } = chatSlice.actions
 
 export default chatSlice.reducer

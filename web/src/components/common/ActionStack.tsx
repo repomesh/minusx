@@ -14,6 +14,7 @@ import {
   MdOutlineTimer
 } from 'react-icons/md'
 import { ChatContent } from './ChatContent';
+import { ToolMessage } from './Chat';
 import { getApp } from "../../helpers/app";
 import 'reflect-metadata';
 import { parseArguments } from '../../planner/plannerActions';
@@ -324,6 +325,7 @@ export const PlanningActionStack: React.FC = () => {
   const activeThread = useSelector((state: RootState) => state.chat.threads[thread])
   const planningMessage = useSelector((state: RootState) => state.chat.threads[thread].planningMessage)
   const streamingContents = useSelector((state: RootState) => state.chat.threads[thread].streamingContents)
+  const streamingToolCalls = useSelector((state: RootState) => state.chat.threads[thread].streamingToolCalls)
 
   const planningActions = isEmpty(dbMetadata) && isAnalystmode
       ? ['One time optimizations underway']
@@ -347,6 +349,46 @@ export const PlanningActionStack: React.FC = () => {
     content => content.conversationID === activeThread.id
   ) || []
 
+  // Filter streaming tool calls for current thread only (excluding TalkToUser)
+  const relevantStreamingToolCalls = streamingToolCalls?.filter(
+    toolCall => toolCall.conversationID === activeThread.id && toolCall.agentName !== 'TalkToUser'
+  ) || []
+
+  // Combine and transform tool calls and contents with timestamps for sorting
+  // Tool calls: transform to ToolMessage format
+  const toolCallItems = relevantStreamingToolCalls.map((toolCall) => ({
+    id: toolCall.id,
+    type: 'toolCall' as const,
+    timestamp: toolCall.timestamp,
+    content: {
+      action: {
+        function: {
+          name: toolCall.agentName
+        },
+        status: toolCall.status,
+        finished: toolCall.finished
+      },
+      renderInfo: {
+        hidden: false
+      }
+    }
+  }))
+
+  // Contents: transform to message format
+  const contentItems = relevantStreamingContents.map((streamingContent) => ({
+    id: streamingContent.id,
+    type: 'content' as const,
+    timestamp: streamingContent.timestamp,
+    content: {
+      type: 'DEFAULT' as const,
+      text: streamingContent.text,
+      images: []
+    }
+  }))
+
+  // Combine and sort by timestamp for chronological order
+  const allStreamingItems = [...toolCallItems, ...contentItems].sort((a, b) => a.timestamp - b.timestamp)
+
   return (
   <VStack aria-label={"planning"} className={'action-stack'} justifyContent={'start'} width={"100%"} spacing={2}>
     <Box
@@ -361,31 +403,31 @@ export const PlanningActionStack: React.FC = () => {
     >
       <HStack>
         <Box>
-          <Text key={planningMessage || currentTitleIndex} animation={currentTitleIndex > 0 ? `${scrollUp} 0.5s ease-in-out` : ""} >{displayMessage}</Text>
+          <Text key={planningMessage?.message || currentTitleIndex} animation={currentTitleIndex > 0 ? `${scrollUp} 0.5s ease-in-out` : ""} >{displayMessage}</Text>
         </Box>
         <Spinner size="xs" speed={'0.75s'} color="minusxBW.100" aria-label={"planning-spinner"}/>
       </HStack>
     </Box>
-    {relevantStreamingContents.map((streamingContent) => (
-      <Box
-        key={streamingContent.id}
-        bg={'minusxGreen.800'}
-        p={3}
-        borderRadius={'10px 10px 10px 0'}
-        color={'minusxBW.50'}
-        width={"90%"}
-        alignSelf={'flex-start'}
-        aria-label={"assistant-message-bubble"}
-      >
-        <ChatContent
-          content={{
-            type: 'DEFAULT',
-            text: streamingContent.text,
-            images: [],
-          }}
-          role="assistant"
-        />
-      </Box>
+    {allStreamingItems.map((item) => (
+      item.type === 'toolCall' ? (
+        <ToolMessage key={item.id} index={-1} content={item.content} isStreaming={true} />
+      ) : (
+        <Box
+          key={item.id}
+          bg={'minusxGreen.800'}
+          p={3}
+          borderRadius={'10px 10px 10px 0'}
+          color={'minusxBW.50'}
+          width={"90%"}
+          alignSelf={'flex-start'}
+          aria-label={"assistant-message-bubble"}
+        >
+          <ChatContent
+            content={item.content}
+            role="assistant"
+          />
+        </Box>
+      )
     ))}
   </VStack>
 )}

@@ -184,7 +184,7 @@ const ConvMessage: React.FC<ReturnType<typeof addToolCallInfoToToolMessages>[num
     )
 }
 
-const ToolMessage: React.FC<{index: number, content: any}> = ({index, content}) => {
+export const ToolMessage: React.FC<{index: number, content: any, isStreaming?: boolean}> = ({index, content, isStreaming = false}) => {
     const { action, renderInfo } = content
     const { textRI, code, language, extraArgs, oldCode } = renderInfo || {}
     const text = content.text || textRI || ''
@@ -219,7 +219,10 @@ const ToolMessage: React.FC<{index: number, content: any}> = ({index, content}) 
     const getStatusIcon = () => {
         if (!finished) {
             if (status === 'DOING') {
-                return <Spinner size="xs" speed="0.8s" thickness="2px" color="blue.500" title="Running" />;
+                // Show checkmark for streaming tool calls, spinner for regular execution
+                return isStreaming
+                    ? <Icon as={BiSolidCheckCircle} color="green.500" title="Running" />
+                    : <Spinner size="xs" speed="0.8s" thickness="2px" color="blue.500" title="Running" />;
             }
             return <Icon as={BiHourglass} color="gray.500" title="Pending" />;
         }
