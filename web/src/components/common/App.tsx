@@ -202,6 +202,13 @@ const AppLoggedIn = forwardRef((_props, ref) => {
       // Handle planning messages
       if (message?.type === 'message' && message?.content?.agent && message?.conversationID) {
         const agentName = message.content.agent;
+        const taskId = message.content.task_id;
+
+        // Skip task_id 0 (main agent)
+        if (taskId === 0) {
+          return;
+        }
+
         dispatch(setPlanningMessage({
           message: `Running ${agentName}`,
           conversationID: message.conversationID
