@@ -342,7 +342,7 @@ const Auth = () => {
           aria-label="Enter work email ID"
           value={email}
           disabled={isEmbedded ? true : isOTPMode ? true : false}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value.toLowerCase())}
           // just trigger the handleSignin function when enter is pressed in this input as well
           onKeyUp={(e) => {
             if (e.key === 'Enter') {

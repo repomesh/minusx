@@ -46,7 +46,7 @@ export default {
 
   async verifyEmail(email: string) {
     try {
-      const response = await axios.post(`${API_BASE_URL}/verify_email`, { email });
+      const response = await axios.post(`${API_BASE_URL}/verify_email`, { email: email.toLowerCase() });
       return response.data;
     } catch (error) {
       toast({
