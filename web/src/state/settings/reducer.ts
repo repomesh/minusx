@@ -113,6 +113,7 @@ interface Settings {
   assetsLoading: boolean
   useTeamMemory: boolean
   savedQuestions: string[]
+  notifyUserStatus: 'incoming' | 'ongoing' | 'complete'
 }
 
 const initialState: Settings = {
@@ -155,6 +156,7 @@ const initialState: Settings = {
   assetsLoading: false,
   useTeamMemory: false,
   savedQuestions: [],
+  notifyUserStatus: 'incoming'
 }
 
 export const settingsSlice = createSlice({
@@ -332,6 +334,9 @@ export const settingsSlice = createSlice({
     setSavedQuestions: (state, action: PayloadAction<string[]>) => {
       state.savedQuestions = action.payload
     },
+    updateNotifyUserStatus: (state, action: PayloadAction<'incoming' | 'ongoing' | 'complete'>) => {
+      state.notifyUserStatus = action.payload
+    }
   },
 })
 
@@ -343,7 +348,8 @@ export const { updateIsLocal, updateUploadLogs,
   setIframeInfo, setConfirmChanges, setDemoMode, setAppRecording, setAiRules,
   applyTableDiff, setSelectedModels, setDRMode, setAnalystMode,
   resetDefaultTablesDB, setModelsMode, setViewAllCatalogs, setEnableHighlightHelpers, setUseMemory, addMemory, setCustomCSS, setEnableStyleCustomization, setEnableUserDebugTools, setEnableReviews, setMetadataHash, setMetadataProcessingCache, clearMetadataProcessingCache,
-  updateManualContextSelection, setUseV2States, setUseV2API, setCurrentEmail, setAvailableAssets, setSelectedAssetId, setAssetsLoading, setUseTeamMemory, addSavedQuestion, removeSavedQuestion, setSavedQuestions
+  updateManualContextSelection, setUseV2States, setUseV2API, setCurrentEmail, setAvailableAssets, setSelectedAssetId, setAssetsLoading, setUseTeamMemory, addSavedQuestion, removeSavedQuestion, setSavedQuestions,
+  updateNotifyUserStatus
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

@@ -36,7 +36,7 @@ import { dispatch, logoutState, resetState } from '../../state/dispatch'
 import {auth as authModule, setAxiosJwt} from '../../app/api'
 import Auth from './Auth'
 import _, { attempt } from 'lodash'
-import { updateAppMode, setAnalystMode, setDRMode, setCurrentEmail } from '../../state/settings/reducer'
+import { updateAppMode, setAnalystMode, setDRMode, setCurrentEmail, updateNotifyUserStatus } from '../../state/settings/reducer'
 import { DevToolsBox } from '../devtools';
 import { RootState, store } from '../../state/store'
 import { getPlatformShortcut } from '../../helpers/platformCustomization'
@@ -49,7 +49,7 @@ import { useGetAtlasMeQuery } from '../../app/api/atlasApi'
 import { setAvailableAssets, setAssetsLoading } from '../../state/settings/reducer'
 import { SupportButton } from './Support'
 import { Markdown } from './Markdown'
-import { getMXToken, setMinusxMode, toggleMinusXRoot } from '../../app/rpc'
+import { getMXToken, setMinusxMode, setStyle, toggleMinusXRoot } from '../../app/rpc'
 import { configs } from '../../constants'
 import { abortPlan, startNewThread, updateThreadID, setPlanningMessage, appendStreamingContent, appendStreamingToolCall } from '../../state/chat/reducer'
 import { intelligentThreadStart } from '../../helpers/threadHistory'
@@ -69,6 +69,28 @@ import NotificationHandler from './NotificationHandler'
 import notificationService from '../../services/notificationService'
 import { useSocketIO } from '../../hooks/useSocketIO'
 import { useCustomCSS } from '../../hooks/useCustomCSS'
+
+const showNotification = async () => {
+  console.log('[minusx] Showing notification')
+  await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for 3 seconds before showing notification
+  await setStyle({
+    type: "CSS",
+    selector: `.minusx-notification-1`,
+  }, 0, {
+    display: 'flex',
+  })
+}
+
+const hideNotification = async () => {
+  console.log('[minusx] Hiding notification')
+  await setStyle({
+    type: "CSS",
+    selector: `.minusx-notification-1`,
+  }, 0, {
+    display: 'none',
+  })
+}
+
 
 const useAppStore = getApp().useStore()
 
@@ -458,6 +480,8 @@ const AppBody = forwardRef((_props, ref) => {
   const isDevToolsOpen = useSelector((state: RootState) => state.settings.isDevToolsOpen)
   const variant = getParsedIframeInfo().variant
   const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
+  const isAppOpen = useSelector((state: RootState) => state.settings.isAppOpen)
+  const notifyUserStatus = useSelector((state: RootState) => state.settings.notifyUserStatus)
   
   // Apply custom CSS throughout the application
   useCustomCSS()
@@ -524,6 +548,18 @@ const AppBody = forwardRef((_props, ref) => {
       checkToken()
     }
   }, [])
+  useEffect(() => {
+    if (notifyUserStatus == 'complete') {
+      return
+    }
+    if (!isAppOpen && !auth.is_authenticated) {
+      showNotification()
+      dispatch(updateNotifyUserStatus('ongoing'))
+    } else {
+      hideNotification()
+      dispatch(updateNotifyUserStatus('complete'))
+    }
+  }, [isAppOpen, notifyUserStatus, auth.is_authenticated])
 
   if (!auth.is_authenticated) {
     return <Auth />
