@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Input, Box, VStack, Image, CloseButton, HStack, Text, Progress } from '@chakra-ui/react';
+import { Button, Input, Box, VStack, Image, CloseButton, HStack, Text, Progress, Badge } from '@chakra-ui/react';
 import { Select, CreatableSelect } from "chakra-react-select";
 import { login } from '../../state/auth/reducer'
 import { dispatch, logoutState, resetState } from '../../state/dispatch'
@@ -57,7 +57,7 @@ const FeatureHighlightBubble = ({items}: {items: HighlightItem[]}) => {
   };
   
   return (
-    isVisibile && <Box position="absolute"
+    isVisibile && <Box position="relative"
       top={items[hintIdx].top} aria-label='login-highlights'
       >
       {
@@ -78,8 +78,8 @@ const FeatureHighlightBubble = ({items}: {items: HighlightItem[]}) => {
       
       <VStack
         borderRadius="md"
-        p={4}
-        mr={4}
+        p={2}
+        mr={2}
         position="relative"
         alignItems="flex-start"
         bg={"minusxBW.200"}
@@ -177,7 +177,11 @@ const Auth = () => {
   const [otp, setOTP] = useState("");
   const [discoverySource, setDiscoverySource] = useState("");
   const isOTPMode = authJWT ? true : false
-  const helperMessage = useAppStore((state) => state.helperMessage)?.split('---')[1] || "Welcome to MinusX! You can ask us anything related to your data, and our agents will take care of the rest!"
+  // const helperMessage = useAppStore((state) => state.helperMessage)?.split('---')[1] || "Welcome to MinusX! You can ask us anything related to your data, and our agents will take care of the rest!"
+  const helperMessage = `Login to start talking to your dashboards, writing complex queries in minutes, and asking deeper questions about your business.
+
+
+  ![img](https://minusx.ai/app_assets/tutorial.gif)`
   const isEmbedded = getParsedIframeInfo().isEmbedded as unknown === 'true'
   
 
@@ -286,13 +290,13 @@ const Auth = () => {
     {
       content: (
         <>
-          <Box fontWeight="bold" color={'minusxGreen.600'}>Welcome to MinusX</Box>
+          <Box fontWeight="bold" color={'minusxGreen.600'}>Welcome to MinusX AI</Box>
           <VStack>
             <Markdown content={helperMessage}/>
           </VStack>
         </>
       ),
-      top: "50%",
+      top: "10%",
       arrow: false,
       duration: 200,
     },
@@ -308,7 +312,7 @@ const Auth = () => {
           </VStack>
         </>
       ),
-      top: "50%",
+      top: "10%",
       arrow: false,
         duration: 50,
     },
@@ -323,7 +327,7 @@ const Auth = () => {
           </VStack>
         </>
       ),
-      top: "50%",
+      top: "10%",
       arrow: true,
         duration: 50,
     }
