@@ -43,11 +43,21 @@ const getBaseStyles = () => `
     font-size: 15px;
     border-radius: 5px;
   }
+  @keyframes minusx-pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
   .minusx_style_notification_badge {
     color: white;
     top: -10px;
     position: absolute;
-    background-color: red;
+    background-color: #e74c3c;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -57,6 +67,19 @@ const getBaseStyles = () => `
     font-weight: bold;
     cursor: pointer;
     display: none;
+    z-index: 1;
+  }
+  .minusx_style_notification_badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #e74c3c;
+    z-index: -1;
+    animation: minusx-pulse-ring 2s ease-out infinite;
   }
   .minusx_style_absolute_container {
     position: absolute;
