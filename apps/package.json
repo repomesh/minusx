@@ -1,7 +1,7 @@
 {
   "name": "apps",
-  "version": "1.0.32",
-  "description": "AI Data Engineer + Analyst for Metabase",
+  "version": "1.0.33",
+  "description": "The Best AI Agent for Metabase",
   "license": "MIT",
   "repository": {
     "type": "git",
