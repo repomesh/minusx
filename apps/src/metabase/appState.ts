@@ -262,23 +262,23 @@ export class MetabaseState extends DefaultAppState<MetabaseAppState> {
       }]
     }
 
-      await RPCs.addNativeElements({
-        type: 'CSS',
-        selector: '.cm-selectionBackground:last-of-type',
-      }, explainButtonJSON);
-      await RPCs.addNativeElements({
-        type: 'CSS',
-        selector: '.ace_selection:last-of-type',
-      }, explainButtonJSON);
+    //   await RPCs.addNativeElements({
+    //     type: 'CSS',
+    //     selector: '.cm-selectionBackground:last-of-type',
+    //   }, explainButtonJSON);
+    //   await RPCs.addNativeElements({
+    //     type: 'CSS',
+    //     selector: '.ace_selection:last-of-type',
+    //   }, explainButtonJSON);
 
-      await RPCs.addNativeElements({
-        type: 'CSS',
-        selector: '.cm-selectionBackground:last-of-type',
-      }, modifyButtonJSON);
-      await RPCs.addNativeElements({
-        type: 'CSS',
-        selector: '.ace_selection:last-of-type',
-      }, modifyButtonJSON);
+    //   await RPCs.addNativeElements({
+    //     type: 'CSS',
+    //     selector: '.cm-selectionBackground:last-of-type',
+    //   }, modifyButtonJSON);
+    //   await RPCs.addNativeElements({
+    //     type: 'CSS',
+    //     selector: '.ace_selection:last-of-type',
+    //   }, modifyButtonJSON);
 
       let _currentlySelectedText = '';
       await subscribe({
