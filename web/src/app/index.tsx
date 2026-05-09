@@ -33,12 +33,38 @@ import { onMBSubscription, subscribeMB } from 'apps';
 const toggleMinusX = (value?: boolean) => toggleMinusXRoot('closed', value)
 
 if (configs.IS_DEV) {
-    // console.log = log   
+    // console.log = log
     ;(window as any).forwardToTab = forwardToTab
 } else {
     console.log = () => {}
     console.error = () => {}
 }
+
+// Embedded mode: hide until customer's /minusx.css applies, with a hard
+// timeout so a slow/missing/hung CSS endpoint can never block the app.
+;(() => {
+    const iframeInfo = getParsedIframeInfo()
+    if (!iframeInfo.isEmbedded || !iframeInfo.origin) return
+    if (document.getElementById('minusx-embedded-css')) return
+
+    document.documentElement.style.visibility = 'hidden'
+    let shown = false
+    const show = () => {
+        if (shown) return
+        shown = true
+        document.documentElement.style.visibility = ''
+    }
+
+    const link = document.createElement('link')
+    link.id = 'minusx-embedded-css'
+    link.rel = 'stylesheet'
+    link.href = `${iframeInfo.origin}/minusx.css`
+    link.onload = show
+    link.onerror = show
+    document.head.appendChild(link)
+
+    setTimeout(show, 800)
+})()
 
 const initRPCSync = (ref: React.RefObject<HTMLInputElement>) => {
     window.addEventListener('message', (event) => {
@@ -176,17 +202,6 @@ function ProviderApp() {
     useEffect(() => {
         const iframeInfo = getParsedIframeInfo()
         if (iframeInfo.isEmbedded && iframeInfo.origin) {
-            const linkId = 'minusx-embedded-css'
-            const existingLink = document.getElementById(linkId)
-            if (!existingLink) {
-                const link = document.createElement('link')
-                link.id = linkId
-                link.rel = 'stylesheet'
-                link.href = `${iframeInfo.origin}/minusx.css`
-                document.head.appendChild(link)
-            }
-            
-            // Fetch JSON configuration
             fetch(`${iframeInfo.origin}/minusx.json`)
                 .then(response => {
                     if (response.ok) {
@@ -202,13 +217,6 @@ function ProviderApp() {
                 .catch(error => {
                     console.warn('Could not fetch embed configuration:', error)
                 })
-            
-            return () => {
-                const link = document.getElementById(linkId)
-                if (link) {
-                    document.head.removeChild(link)
-                }
-            }
         }
     }, [])
     useInitArgs(() => {
