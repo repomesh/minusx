@@ -229,3 +229,106 @@ export const getSQLFromMBQL = createAPI<{
   '/api/dataset/native',
   'POST'
 );
+
+// Card (Question) Save Operations
+export const saveCard = createAPI<{
+  name: string;
+  dataset_query: Record<string, any>;
+  display: string;
+  visualization_settings?: Record<string, any>;
+  collection_id?: number | null;
+  description?: string | null;
+}>(
+  '/api/card',
+  'POST',
+  { cache_ttl: 0 }
+);
+
+export const updateCard = createAPI<{
+  card_id: number;
+  name?: string;
+  dataset_query?: Record<string, any>;
+  display?: string;
+  visualization_settings?: Record<string, any>;
+  collection_id?: number | null;
+  description?: string | null;
+}>(
+  '/api/card/{{card_id}}',
+  'PUT',
+  { cache_ttl: 0 }
+);
+
+// Dashboard Read Operations
+export const getDashboard = createAPI<{ dashboard_id: number }>(
+  '/api/dashboard/{{dashboard_id}}',
+  'GET',
+  { cache_ttl: 0 }
+);
+
+// Dashboard Save Operations
+export const saveDashboard = createAPI<{
+  name: string;
+  collection_id?: number | null;
+  description?: string | null;
+  parameters?: any[];
+}>(
+  '/api/dashboard',
+  'POST',
+  { cache_ttl: 0 }
+);
+
+export const updateDashboard = createAPI<{
+  dashboard_id: number;
+  name?: string;
+  collection_id?: number | null;
+  description?: string | null;
+  parameters?: any[];
+}>(
+  '/api/dashboard/{{dashboard_id}}',
+  'PUT',
+  { cache_ttl: 0 }
+);
+
+// Dashboard Card Operations
+export const addCardToDashboard = createAPI<{
+  dashboard_id: number;
+  cardId: number;
+  size_x?: number;
+  size_y?: number;
+  col?: number;
+  row?: number;
+}>(
+  '/api/dashboard/{{dashboard_id}}/cards',
+  'POST',
+  { cache_ttl: 0 }
+);
+
+export const updateDashboardCards = createAPI<{
+  dashboard_id: number;
+  cards: Array<{
+    id: number;
+    card_id: number;
+    size_x: number;
+    size_y: number;
+    col?: number;
+    row?: number;
+    series?: any[];
+  }>;
+}>(
+  '/api/dashboard/{{dashboard_id}}/cards',
+  'PUT',
+  { cache_ttl: 0 }
+);
+
+// Runs a single dashboard card's query and returns its dataset result. Used to
+// hydrate dashcardData in Metabase's store after adding cards without a reload.
+export const runDashcardQuery = createAPI<{
+  dashboard_id: number;
+  dashcard_id: number;
+  card_id: number;
+  parameters?: any[];
+}>(
+  '/api/dashboard/{{dashboard_id}}/dashcard/{{dashcard_id}}/card/{{card_id}}/query',
+  'POST',
+  { cache_ttl: 0 }
+);

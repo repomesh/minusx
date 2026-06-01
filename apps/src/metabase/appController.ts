@@ -51,7 +51,7 @@ import { getSelectedDbId, getCurrentUserInfo as getUserInfo, getSnippets, getCur
 import { runSQLQueryFromDashboard, runMBQLQueryFromDashboard } from "./helpers/dashboard/runSqlQueryFromDashboard";
 import { getAllRelevantModelsForSelectedDb, getTableData } from "./helpers/metabaseAPIHelpers";
 import { processSQLWithCtesOrModels, dispatch, updateIsDevToolsOpen, updateDevToolsTabName, addMemory } from "web";
-import { fetchTableMetadata, getSQLFromMBQL } from "./helpers/metabaseAPI";
+import { fetchTableMetadata, getSQLFromMBQL, saveCard, saveDashboard, updateDashboard, addCardToDashboard, updateDashboardCards, getDashboard, runDashcardQuery } from "./helpers/metabaseAPI";
 import { getSourceTableIds } from "./helpers/mbql/utils";
 import { replaceLLMFriendlyIdentifiersInSqlWithModels } from "./helpers/metabaseModels";
 
@@ -444,14 +444,14 @@ export class MetabaseController extends AppController<MetabaseAppState> {
             query: mbql,
         });
         // console.log("Derived SQL query is", sqlQuery);
-    } catch (error) {
+    } catch (error: any) {
         // console.log('Full error is', error)
-        let errorMessage = error?.response?.message || error.message || 'Unknown error';
+        let errorMessage = error?.response?.message || error?.message || 'Unknown error';
         try {
-            let errorDetails = {}
+            let errorDetails: any = {}
             if (errorMessage.includes('DETAILS:')) {
                 errorDetails = JSON.parse(errorMessage.split('DETAILS:')[1]);
-                errorMessage = errorDetails?.message?? 'Error deriving SQL from MBQL';
+                errorMessage = errorDetails?.message ?? 'Error deriving SQL from MBQL';
             }
         } catch (e) {
             console.error('Error while processing error message:', e);
@@ -603,6 +603,251 @@ export class MetabaseController extends AppController<MetabaseAppState> {
       images: [],
     };
     return actionContent;
+  }
+
+  @Action({
+    labelRunning: "Saving question",
+    labelDone: "Question saved",
+    labelTask: "Save question",
+    description: "Saves a query as a new question/card in Metabase. If sql or mbql is provided, saves that query directly. Otherwise saves the current query from the editor.",
+    renderBody: ({ name, sql, mbql }: { name: string, sql?: string, mbql?: any }) => {
+      return { text: `Saving as "${name}"`, code: sql || (mbql ? JSON.stringify(mbql) : null) }
+    }
+  })
+  async SaveQuestion({ name, description, collection_id, sql, mbql, template_tags, display, visualization_settings }: {
+    name: string,
+    description?: string,
+    collection_id?: number,
+    sql?: string,
+    mbql?: any,
+    template_tags?: Record<string, any>,
+    display?: string,
+    visualization_settings?: Record<string, any>,
+  }) {
+    const actionContent: BlankMessageContent = { type: "BLANK" };
+
+    let dataset_query: Record<string, any>;
+    let finalDisplay: string;
+    let finalVizSettings: Record<string, any>;
+
+    if (sql || mbql) {
+      // Need a database ID for building from scratch
+      const state = (await this.app.getState()) as MetabaseAppStateSQLEditor;
+      const dbId = state?.selectedDatabaseInfo?.id as number;
+      if (!dbId) {
+        actionContent.content = "<ERROR>No database selected</ERROR>";
+        return actionContent;
+      }
+
+      if (sql) {
+        // Build a native SQL question
+        const allSnippetsDict = await getSnippets() as MetabaseStateSnippetsDict;
+        const allTemplateTags = getAllTemplateTagsInQuery(sql, allSnippetsDict);
+        const mergedTemplateTags = { ...allTemplateTags, ...(template_tags || {}) };
+
+        dataset_query = {
+          database: dbId,
+          type: "native",
+          native: {
+            query: sql,
+            "template-tags": mergedTemplateTags,
+          },
+        };
+      } else {
+        // Build an MBQL question
+        if (typeof mbql === 'string') {
+          try { mbql = JSON.parse(mbql); } catch (e) { /* use as-is */ }
+        }
+        dataset_query = {
+          database: dbId,
+          type: "query",
+          query: mbql,
+        };
+      }
+
+      finalDisplay = display || "table";
+      finalVizSettings = visualization_settings || {};
+    } else {
+      // Save the current card from the editor
+      const currentCard = await getCurrentCard() as Card | CardV2;
+      if (!currentCard || !currentCard.dataset_query) {
+        actionContent.content = "<ERROR>No query to save. Provide sql, mbql, or run a query first.</ERROR>";
+        return actionContent;
+      }
+      dataset_query = currentCard.dataset_query;
+      finalDisplay = display || currentCard.display || "table";
+      finalVizSettings = visualization_settings || currentCard.visualization_settings || {};
+    }
+
+    try {
+      const result = await saveCard({
+        name,
+        dataset_query,
+        display: finalDisplay,
+        visualization_settings: finalVizSettings,
+        collection_id: collection_id ?? null,
+        description: description ?? null,
+      });
+      actionContent.content = `Question saved successfully with id ${result.id}`;
+    } catch (err: any) {
+      const errorMessage = err?.response?.message || err?.message || 'Unknown error';
+      actionContent.content = `<ERROR>Failed to save question: ${errorMessage}</ERROR>`;
+    }
+    return actionContent;
+  }
+
+  @Action({
+    labelRunning: "Saving dashboard",
+    labelDone: "Dashboard saved",
+    labelTask: "Save dashboard",
+    description: "Creates a new dashboard or updates an existing one in Metabase, optionally adding saved question cards to it. Pass dashboard_id to update an existing dashboard instead of creating a new one.",
+    renderBody: ({ name, dashboard_id, card_ids }: { name: string, dashboard_id?: number, card_ids?: number[] }) => {
+      const cardInfo = card_ids && card_ids.length > 0 ? ` with ${card_ids.length} card(s)` : '';
+      const action = dashboard_id ? `Updating dashboard ${dashboard_id}` : `Creating dashboard "${name}"`;
+      return { text: `${action}${cardInfo}`, code: null }
+    }
+  })
+  async SaveDashboard({ name, description, collection_id, card_ids = [], dashboard_id }: { name: string, description?: string, collection_id?: number, card_ids?: number[], dashboard_id?: number }) {
+    const actionContent: BlankMessageContent = { type: "BLANK" };
+    try {
+      let dashboardId: number;
+
+      if (dashboard_id) {
+        await updateDashboard({
+          dashboard_id,
+          name,
+          collection_id: collection_id ?? null,
+          description: description ?? null,
+        });
+        dashboardId = dashboard_id;
+      } else {
+        const dashboard = await saveDashboard({
+          name,
+          collection_id: collection_id ?? null,
+          description: description ?? null,
+        });
+        dashboardId = dashboard.id;
+      }
+
+      if (card_ids.length > 0) {
+        // When updating an existing dashboard, preserve its current cards
+        // (and their positions/sizes) since updateDashboardCards replaces the
+        // entire set of dashcards rather than appending.
+        let existingCards: any[] = [];
+        if (dashboard_id) {
+          const dashboard = await getDashboard({ dashboard_id });
+          existingCards = dashboard.dashcards ?? [];
+        }
+        // Place new cards below the existing layout to avoid overlaps.
+        const startRow = existingCards.length > 0
+          ? Math.max(...existingCards.map((c: any) => (c.row ?? 0) + (c.size_y ?? 0)))
+          : 0;
+        const newCards = card_ids.map((cardId, index) => ({
+          id: -index - 1,
+          card_id: cardId,
+          size_x: 12,
+          size_y: 8,
+          col: (index % 2) * 12,
+          row: startRow + Math.floor(index / 2) * 8,
+        }));
+        await updateDashboardCards({ dashboard_id: dashboardId, cards: [...existingCards, ...newCards] });
+      }
+
+      // Only when updating an existing dashboard: the user may be viewing it,
+      // so refresh Metabase's store in-place to show changes without a reload.
+      // (A brand-new dashboard isn't open yet, so there's nothing to refresh.)
+      if (dashboard_id) {
+        await this.refreshDashboardInStore(dashboard_id);
+      }
+
+      const action = dashboard_id ? 'updated' : 'created';
+      actionContent.content = `Dashboard "${name}" ${action} successfully with id ${dashboardId}`;
+    } catch (err: any) {
+      const errorMessage = err?.response?.message || err?.message || 'Unknown error';
+      actionContent.content = `<ERROR>Failed to save dashboard: ${errorMessage}</ERROR>`;
+    }
+    return actionContent;
+  }
+
+  // Refresh the currently-open dashboard in Metabase's Redux store without a
+  // page reload, by replaying the `FETCH_DASHBOARD/fulfilled` action that
+  // Metabase itself dispatches on load. The payload is rebuilt from the REST
+  // API (GET /api/dashboard/:id) which returns the same denormalized shape.
+  async refreshDashboardInStore(dashboardId: number) {
+    try {
+      // Only refresh if this dashboard is the one currently being viewed,
+      // otherwise we'd clobber whatever the user is actually looking at.
+      const dashboardState = await getDashboardState();
+      if (!dashboardState || dashboardState.dashboardId !== dashboardId) {
+        return;
+      }
+
+      const dashboard = await getDashboard({ dashboard_id: dashboardId });
+      const dashcards: any[] = dashboard.dashcards ?? [];
+
+      // Normalize: dashboards reference dashcards by id; the card stays embedded
+      // inside each dashcard (matching Metabase's FETCH_DASHBOARD payload).
+      const dashcardEntities = dashcards.reduce((acc: Record<number, any>, dc: any) => {
+        acc[dc.id] = dc;
+        return acc;
+      }, {});
+      const entities = {
+        dashboard: {
+          [dashboardId]: { ...dashboard, dashcards: dashcards.map((dc: any) => dc.id) },
+        },
+        dashcard: dashcardEntities,
+      };
+
+      const payload = {
+        entities,
+        dashboard,
+        dashboardId,
+        // Keep the user's current filter selections rather than resetting them.
+        parameterValues: dashboardState.parameterValues ?? {},
+        preserveParameters: true,
+      };
+      const meta = {
+        arg: {
+          dashId: dashboardId,
+          queryParams: {},
+          options: { clearCache: false, preserveParameters: true },
+        },
+        requestStatus: 'fulfilled',
+      };
+
+      await RPCs.dispatchMetabaseAction('metabase/dashboard/FETCH_DASHBOARD/fulfilled', payload, meta);
+
+      // The FETCH_DASHBOARD action only puts the dashcards in the store; it does
+      // not run their queries, so freshly-added cards render blank. Run the query
+      // for any dashcard that has no cached data yet and replay FETCH_CARD_DATA
+      // so Metabase populates dashcardData and the card renders its results.
+      const existingData: Record<number, any> = dashboardState.dashcardData ?? {};
+      const cardsNeedingData = dashcards.filter((dc: any) => dc.card_id != null && !existingData[dc.id]);
+      await Promise.all(cardsNeedingData.map(async (dc: any) => {
+        try {
+          const result = await runDashcardQuery({
+            dashboard_id: dashboardId,
+            dashcard_id: dc.id,
+            card_id: dc.card_id,
+            parameters: [],
+          });
+          await RPCs.dispatchMetabaseAction(
+            'metabase/dashboard/FETCH_CARD_DATA/fulfilled',
+            { dashcard_id: dc.id, card_id: dc.card_id, result },
+            {
+              arg: { card: dc.card, dashcard: dc, options: { reload: false, clearCache: false } },
+              requestStatus: 'fulfilled',
+            },
+          );
+        } catch (cardErr) {
+          console.warn(`Failed to load data for dashcard ${dc.id}`, cardErr);
+        }
+      }));
+    } catch (err) {
+      // Best-effort: if anything goes wrong the dashboard still updates on a
+      // manual refresh, so don't fail the whole SaveDashboard action.
+      console.warn('Failed to refresh dashboard in store', err);
+    }
   }
 
   // 1. Internal actions -------------------------------------------
