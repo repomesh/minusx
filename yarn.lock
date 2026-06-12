@@ -5124,6 +5124,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/dompurify@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "@types/dompurify@npm:3.2.0"
+  dependencies:
+    dompurify: "npm:*"
+  checksum: 10c0/e83fec586ffbb1b43f7c8479f2a99c223814d240db912d53fb126aaeea52a4091deceeb75632b5d76004d88ef0fbf444984887b121dece6fa69f4172ed4b2b07
+  languageName: node
+  linkType: hard
+
 "@types/eslint-scope@npm:^3.7.3":
   version: 3.7.7
   resolution: "@types/eslint-scope@npm:3.7.7"
@@ -5359,6 +5368,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/luxon@npm:^3.7.1":
+  version: 3.7.1
+  resolution: "@types/luxon@npm:3.7.1"
+  checksum: 10c0/2db30c13b58adcd86daa447faa3ba59515fe907ead8ee3e6bb716d662812af0619d712f6c1eb190cdd7f9d2c00444c3ecd80af0f36e8143eb0c5e7339d6b2aca
+  languageName: node
+  linkType: hard
+
 "@types/mdast@npm:^4.0.0":
   version: 4.0.4
   resolution: "@types/mdast@npm:4.0.4"
@@ -5578,6 +5594,13 @@ __metadata:
   version: 4.0.5
   resolution: "@types/tough-cookie@npm:4.0.5"
   checksum: 10c0/68c6921721a3dcb40451543db2174a145ef915bc8bcbe7ad4e59194a0238e776e782b896c7a59f4b93ac6acefca9161fccb31d1ce3b3445cb6faa467297fb473
+  languageName: node
+  linkType: hard
+
+"@types/trusted-types@npm:^2.0.7":
+  version: 2.0.7
+  resolution: "@types/trusted-types@npm:2.0.7"
+  checksum: 10c0/4c4855f10de7c6c135e0d32ce462419d8abbbc33713b31d294596c0cc34ae1fa6112a2f9da729c8f7a20707782b0d69da3b1f8df6645b0366d08825ca1522e0c
   languageName: node
   linkType: hard
 
@@ -7580,6 +7603,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cronstrue@npm:^3.9.0":
+  version: 3.14.0
+  resolution: "cronstrue@npm:3.14.0"
+  bin:
+    cronstrue: bin/cli.js
+  checksum: 10c0/6a45a60a5ba6ef8c3f686ee213f0a5a989ad4123da8175d2892c92615bbb8abfd83d06e2f8d64e4097c03e4d4abd94650f4f58aa1255da435bba3f69ff5a79aa
+  languageName: node
+  linkType: hard
+
 "cross-fetch@npm:^3.1.5":
   version: 3.1.8
   resolution: "cross-fetch@npm:3.1.8"
@@ -8070,6 +8102,18 @@ __metadata:
   dependencies:
     domelementtype: "npm:^2.2.0"
   checksum: 10c0/5c199c7468cb052a8b5ab80b13528f0db3d794c64fc050ba793b574e158e67c93f8336e87fd81e9d5ee43b0e04aea4d8b93ed7be4899cb726a1601b3ba18538b
+  languageName: node
+  linkType: hard
+
+"dompurify@npm:*, dompurify@npm:^3.3.0":
+  version: 3.4.9
+  resolution: "dompurify@npm:3.4.9"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.7"
+  dependenciesMeta:
+    "@types/trusted-types":
+      optional: true
+  checksum: 10c0/e03d88d5959dcaae172357002d74e47e66fc6685cac8928fe4b02982f7b4051e2b8ff70279e4e6fb13be112c0e5cae11439ab960c06c487cb91a3c1a18baed49
   languageName: node
   linkType: hard
 
@@ -11732,6 +11776,13 @@ __metadata:
   dependencies:
     yallist: "npm:^3.0.2"
   checksum: 10c0/89b2ef2ef45f543011e38737b8a8622a2f8998cddf0e5437174ef8f1f70a8b9d14a918ab3e232cb3ba343b7abddffa667f0b59075b2b80e6b4d63c3de6127482
+  languageName: node
+  linkType: hard
+
+"luxon@npm:^3.7.2":
+  version: 3.7.2
+  resolution: "luxon@npm:3.7.2"
+  checksum: 10c0/ed8f0f637826c08c343a29dd478b00628be93bba6f068417b1d8896b61cb61c6deacbe1df1e057dbd9298334044afa150f9aaabbeb3181418ac8520acfdc2ae2
   languageName: node
   linkType: hard
 
@@ -16681,8 +16732,10 @@ __metadata:
     "@monaco-editor/react": "npm:^4.7.0"
     "@redux-devtools/core": "npm:^4.0.0"
     "@reduxjs/toolkit": "npm:^2.2.4"
+    "@types/dompurify": "npm:^3.2.0"
     "@types/jest": "npm:^29.5.12"
     "@types/js-yaml": "npm:^4.0.9"
+    "@types/luxon": "npm:^3.7.1"
     "@types/react": "npm:^18.0.26"
     "@types/react-dom": "npm:^18.0.10"
     "@types/react-window": "npm:^1"
@@ -16693,7 +16746,9 @@ __metadata:
     axios: "npm:^1.7.2"
     babel-jest: "npm:^29.5.0"
     chakra-react-select: "npm:^5.0.2"
+    cronstrue: "npm:^3.9.0"
     diff: "npm:^7.0.0"
+    dompurify: "npm:^3.3.0"
     dotenv: "npm:^16.4.5"
     eslint: "npm:^8.31.0"
     eslint-config-prettier: "npm:^8.8.0"
@@ -16708,6 +16763,7 @@ __metadata:
     js-sha256: "npm:^0.11.1"
     js-tiktoken: "npm:^1.0.12"
     lodash: "npm:^4.17.21"
+    luxon: "npm:^3.7.2"
     monaco-editor: "npm:^0.52.2"
     monaco-yaml: "npm:^5.4.0"
     node-sql-parser: "npm:^5.3.3"

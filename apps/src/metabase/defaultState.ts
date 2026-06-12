@@ -149,7 +149,5 @@ export const metabaseInternalState: MetabaseInternalState = {
 
 \`[badge]✨Product Update✨\` \n#### Launching: **Mentions**
 Mention specific tables and models for MinusX to focus on. Type "@" to see all entities. [[Read more](https://docs.minusx.ai/en/articles/12429148-mentions-table-model)]
-
-[![img](https://minusx.ai/app_assets/mentions.gif)](https://docs.minusx.ai/en/articles/12429148-mentions-table-model)
 `,
 };
